@@ -1,0 +1,27 @@
+theme = "native"
+icons = "awesome5"
+
+# [[block]]
+# block = "focused_window"
+# show_marks = "all"
+
+[[block]]
+block = "memory"
+display_type = "memory"
+format_mem = "{Mup}%"
+format_swap = "{SUp}%"
+
+[[block]]
+block = "battery"
+interval = 10
+
+[[block]]
+block = "backlight"
+
+[[block]]
+block = "sound"
+
+[[block]]
+block = "time"
+interval = 60
+format = "%m-%d/%R"
