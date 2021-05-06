@@ -1,0 +1,15 @@
+#+TITLE: Readme
+
+* 常用软件配置
+
+** wm相关
+
+- 窗口管理器 [[i3-gaps][file:config/i3/]
+- 状态条 [[i3status-rust][file:config/i3status-rust/]
+- 通知管理器 [[dunst][file:config/dunst/]
+- 混成器 [[picom][file:config/picom/]
+- 锁屏 [[betterlockscreen][file:config/betterlockscreenrc]
+
+** 编辑器
+
+*** TODO emacs
