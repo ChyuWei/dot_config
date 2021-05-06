@@ -1,5 +1,5 @@
-theme = "native"
-icons = "awesome5"
+theme = "plain"
+icons = "material"
 
 # [[block]]
 # block = "focused_window"
@@ -15,11 +15,17 @@ format_swap = "{SUp}%"
 block = "battery"
 interval = 10
 
-[[block]]
-block = "backlight"
+# [[block]]
+# block = "backlight"
 
 [[block]]
 block = "sound"
+
+# [[block]]
+# block = "xrandr"
+# icons = true
+# resolution = true
+# interval = 2
 
 [[block]]
 block = "time"
