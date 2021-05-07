@@ -7,12 +7,13 @@
 (use-package doom-themes
   :ensure t
   :init
-  (load-theme 'doom-one t)
   :config
   (setq doom-themes-enable-bold t
         doom-themes-enable-italic t)
   (doom-themes-visual-bell-config)
-  (doom-themes-org-config))
+  (doom-themes-org-config)
+  (load-theme 'doom-one t))
+
 
 (use-package doom-modeline
   :ensure t

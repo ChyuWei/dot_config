@@ -17,13 +17,22 @@
   (package-install 'use-package))
 (eval-and-compile
   (setq use-package-always-ensure nil)
-  (setq use-package-always-defer t)
+  (setq use-package-always-defer nil)
   (setq use-package-expand-minimally t))
 
 (eval-when-compile
   (require 'use-package))
 (use-package diminish :ensure t)
 (use-package bind-key :ensure t)
+
+(use-package exec-path-from-shell
+  :ensure t
+  :init
+  (setq exec-path-from-shell-variables '("PATH"))
+  (exec-path-from-shell-initialize))
+
+(use-package server
+  :hook (after-init . server-mode))
 
 ;; encoding
 (set-charset-priority 'unicode)
