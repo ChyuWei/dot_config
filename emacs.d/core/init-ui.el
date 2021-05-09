@@ -10,7 +10,7 @@
   :config
   (setq doom-themes-enable-bold t
         doom-themes-enable-italic t)
-  (doom-themes-visual-bell-config)
+;  (doom-themes-visual-bell-config)
   (doom-themes-org-config)
   (load-theme 'doom-one t))
 
