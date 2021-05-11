@@ -4,6 +4,13 @@
 ;;
 ;;; Code:
 
+(setq-default indent-tabs-mode nil
+	      tab-always-indent nil
+	      tab-width 4)
+
+(setq-default fill-column 80
+	      require-final-newline t)
+
 ;; show number in prog-mode
 (use-package display-line-numbers
   :hook (prog-mode . display-line-numbers-mode))

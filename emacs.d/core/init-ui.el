@@ -4,6 +4,25 @@
 ;;
 ;;; Code:
 
+(setq inhibit-startup-screen t
+      inhibit-startup-echo-area-message t
+      inhibit-default-init t
+      initial-major-mode 'fundamental-mode
+      initial-scratch-message nil)
+
+(setq frame-resize-pixelwise t
+      window-resize-pixelwise nil)
+
+(push '(menu-bar-lines . 0) default-frame-alist)
+(push '(tool-bar-lines . 0) default-frame-alist)
+(push '(vertical-scroll-bars) default-frame-alist)
+
+(setq menu-bar-mode nil
+      tool-bar-mode nil
+      scroll-bar-mode nil)
+
+(setq use-dialog-box nil)
+
 (use-package simple
   :hook (text-mode . visual-line-mode)
   :init
@@ -35,11 +54,6 @@
   :bind (:map default-text-scale-mode-map
          ("C-=" . default-text-scale-increase)
          ("C--" . default-text-scale-decrease)))
-
-(setq use-file-dialog nil
-      use-dialog-box nil
-      inhibit-startup-screen t
-      inhibit-startup-echo-area-message t)
 
 (provide 'init-ui)
 ;;; init-ui.el ends here
