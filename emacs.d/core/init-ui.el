@@ -4,10 +4,18 @@
 ;;
 ;;; Code:
 
+(use-package simple
+  :hook (text-mode . visual-line-mode)
+  :init
+  (setq column-number-mode t
+        line-number-mode t
+        track-eol t)
+  (setq-default show-trailing-whitespace t))
+
 (use-package doom-themes
   :ensure t
-  :init 
-  (load-theme 'doom-one t)
+  :init
+  (load-theme 'doom-dracula t)
   :config
   (setq doom-themes-enable-bold t
         doom-themes-enable-italic t)

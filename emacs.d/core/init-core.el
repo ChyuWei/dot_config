@@ -39,9 +39,9 @@
   (exec-path-from-shell-initialize))
 
 ;; server mode
-(if myself/use-server
-  (use-package server
-    :hook (after-init . server-mode)))
+(use-package server
+  :if myself/use-server
+  :hook (after-init . server-mode))
 
 ;; misc
 (fset 'yes-or-no-p 'y-or-n-p)
