@@ -6,21 +6,20 @@
 
 (use-package doom-themes
   :ensure t
-  :init
+  :init 
+  (load-theme 'doom-one t)
   :config
   (setq doom-themes-enable-bold t
         doom-themes-enable-italic t)
-;  (doom-themes-visual-bell-config)
-  (doom-themes-org-config)
-  (load-theme 'doom-one t))
-
+  (doom-themes-visual-bell-config)
+  (doom-themes-org-config))
 
 (use-package doom-modeline
   :ensure t
-  :init (doom-modeline-mode 1))
-
-(use-package display-line-numbers
-  :hook (prog-mode . display-line-numbers-mode))
+  :custom
+  (doom-modeline-minor-modes t)
+  (doom-modeline-unicode-fallback t)
+  :hook (after-init . doom-modeline-mode))
 
 (use-package default-text-scale
   :ensure t
@@ -33,7 +32,6 @@
       use-dialog-box nil
       inhibit-startup-screen t
       inhibit-startup-echo-area-message t)
-
 
 (provide 'init-ui)
 ;;; init-ui.el ends here
