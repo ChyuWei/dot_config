@@ -21,4 +21,10 @@
   :config
   (global-evil-surround-mode 1))
 
+(use-package evil-commentary
+  :ensure t
+  :after evil
+  :config
+  (evil-commentary-mode))
+
 (provide 'init-evil)

@@ -4,13 +4,14 @@
 ;;
 ;;; Code:
 
-(add-to-list 'load-path (expand-file-name "core" user-emacs-directory))
-(add-to-list 'load-path (expand-file-name "editor" user-emacs-directory))
-(add-to-list 'load-path (expand-file-name "langs" user-emacs-directory))
+(defvar lisp-dirs '("core" "editor" "langs" "tool"))
+(dolist (dir lisp-dirs)
+  (push (expand-file-name dir user-emacs-directory) load-path))
 
 (require 'init-core)
 (require 'init-ui)
 (require 'init-editor)
 (require 'init-langs)
+(require 'init-tool)
 
 (provide 'init)
