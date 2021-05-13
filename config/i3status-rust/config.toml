@@ -1,15 +1,16 @@
 theme = "plain"
 icons = "material"
 
-# [[block]]
-# block = "focused_window"
-# show_marks = "all"
+[[block]]
+block = "focused_window"
+max_width = 50
+show_marks = "all"
 
 [[block]]
 block = "memory"
 display_type = "memory"
-format_mem = "{Mup}%"
-format_swap = "{SUp}%"
+format_mem = "{mem_used_percents}"
+format_swap = "{swap_used_percents}"
 
 [[block]]
 block = "battery"
