@@ -1,0 +1,13 @@
+! see default setting `xmodmap -pke`
+! default setting
+! keycode  66 = Caps_Lock NoSymbol Caps_Lock
+! keycode  22 = BackSpace BackSpace BackSpace BackSpace
+! keycode  51 = backslash bar backslash bar
+clear lock
+clear control
+
+keycode  66 = Control_L
+keycode  51 = BackSpace BackSpace BackSpace BackSpace
+keycode  22 = backslash bar backslash bar
+
+add control = Control_L Control_R
