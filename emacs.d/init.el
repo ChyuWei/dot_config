@@ -9,7 +9,6 @@
   (push (expand-file-name dir user-emacs-directory) load-path))
 
 (require 'init-core)
-(require 'init-ui)
 (require 'init-editor)
 (require 'init-langs)
 (require 'init-tool)

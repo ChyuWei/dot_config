@@ -38,6 +38,8 @@
   (setq exec-path-from-shell-variables '("PATH"))
   (exec-path-from-shell-initialize))
 
+(require 'init-ui)
+
 ;; server mode
 (use-package server
   :if myself/use-server
