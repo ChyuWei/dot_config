@@ -4,6 +4,8 @@
 ;;
 ;;; Code:
 
+(require 'init-custom)
+
 (setq-default indent-tabs-mode nil
 	      tab-always-indent nil
 	      tab-width 4)
@@ -27,10 +29,13 @@
   :diminish
   :hook (after-init . global-auto-revert-mode))
 
-(use-package elec-pair
-  :hook (prog-mode . electric-pair-mode))
+(use-package smartparens
+  :ensure t
+  :config (require 'smartparens-config)
+  :hook (prog-mode . smartparens-mode))
 
-(require 'init-evil)
+(if myself/use-evil
+    (require 'init-evil))
 
 ;; encoding
 (set-charset-priority 'unicode)

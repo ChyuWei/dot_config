@@ -43,17 +43,19 @@
 
 (use-package doom-modeline
   :ensure t
+  :if myself/use-doom-modeline
   :custom
   (doom-modeline-minor-modes t)
   (doom-modeline-unicode-fallback t)
   :hook (after-init . doom-modeline-mode))
 
-(use-package default-text-scale
-  :ensure t
-  :hook (after-init . default-text-scale-mode)
-  :bind (:map default-text-scale-mode-map
-         ("C-=" . default-text-scale-increase)
-         ("C--" . default-text-scale-decrease)))
+;; (use-package default-text-scale
+;;   :if nil
+;;   :ensure t
+;;   :hook (after-init . default-text-scale-mode)
+;;   :bind (:map default-text-scale-mode-map
+;;          ("C-=" . default-text-scale-increase)
+;;          ("C--" . default-text-scale-decrease)))
 
 (provide 'init-ui)
 ;;; init-ui.el ends here
