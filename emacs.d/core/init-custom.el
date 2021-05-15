@@ -16,5 +16,8 @@
 ;; editor flags
 (defvar myself/use-evil nil)
 
+;; tool flags
+(defvar myself/use-rime nil)
+
 (provide 'init-custom)
 ;;; init-custom.el ends here

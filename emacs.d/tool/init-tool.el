@@ -4,11 +4,14 @@
 ;;
 ;;; Code:
 
+(require 'init-custom)
+
 (use-package magit
   :ensure t
   :init (setq magic-diff-refine-hunk t))
 
 (use-package rime
+  :if myself/use-rime
   :ensure t
   :custom
   ((default-input-method "rime")
