@@ -17,6 +17,9 @@ syntax on
 
 " set ignorecase
 
+set foldmethod=syntax
+set nofoldenable
+
 set tabstop=4
 set shiftwidth=4
 set softtabstop=4
