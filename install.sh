@@ -3,16 +3,15 @@
 GIT_URL="https://hub.fastgit.org"
 GIT_RAW_URL="https://raw.fastgit.org"
 
-VIMRC_PATH="$HOME/.vimrc"
-VIMDIR_PATH="$HOME/.vim"
 
-VIM_SRC="$(pwd)/vimrc"
+check_already() {
+    ck_file=$1
+    src_file=$2
 
-check_vim() {
     # check already done
-    if [ -L $VIMRC_PATH ]
+    if [ -L $ck_file ]
     then 
-        if [ $(readlink $VIMRC_PATH) = $VIM_SRC ]
+        if [ $(readlink $ck_file) = $src_file ]
         then 
             return 1
         fi
@@ -20,18 +19,26 @@ check_vim() {
     return 0
 }
 
-backup_vim() {
-    # backup config file
-    if [ -f $VIMRC_PATH ]
-    then 
-        echo "Making .vimrc backup"
-        mv $VIMRC_PATH ${VIMRC_PATH}.bak
-    fi
+backup_file() {
+    bk_file=$1
+    bk_alias=$2
 
-    if [ -d $VIMDIR_PATH ] 
+    # backup config file
+    if [ -f $bk_file ]
     then 
-        echo "Making .vim backup"
-        mv $VIMDIR_PATH ${VIMDIR_PATH}.bak
+        echo "Making $bk_alias backup"
+        mv $bk_file ${bk_file}.bak
+    fi
+}
+
+backup_dir() {
+    bk_dir=$1
+    bk_alias=$2
+
+    if [ -d $bk_dir ] 
+    then 
+        echo "Making $bk_alias backup"
+        mv $bk_dir ${bk_dir}.bak
     fi
 }
 
@@ -39,14 +46,19 @@ backup_vim() {
 install_vim() {
     echo "install vim"
 
-    check_vim
+    VIMRC_PATH="$HOME/.vimrc"
+    VIMDIR_PATH="$HOME/.vim"
+    VIM_SRC="$(pwd)/vimrc"
+
+    check_already $VIMRC_PATH $VIM_SRC
     if [ $? -eq 1 ]
     then 
         echo "already install"
         return
     fi
 
-    backup_vim
+    backup_file $VIMRC_PATH ".vimrc"
+    backup_dir $VIMDIR_PATH ".vim"
 
     echo -e "\tinstall .vimrc"
     ln -s $VIM_SRC $VIMRC_PATH
