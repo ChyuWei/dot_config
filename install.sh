@@ -64,7 +64,7 @@ install_vim() {
     ln -s $SRC_PATH $DST_PATH
     echo -e "\tinstall .vim"
     _vim_plug=$GIT_RAW_URL/junegunn/vim-plug/master/plug.vim
-    curl -sfLo $VIMDIR_PATH/autoload/plug.vim --create-dirs $_vim_plug
+    curl -sfLo $DST_DIR_PATH/autoload/plug.vim --create-dirs $_vim_plug
     echo "done"
 }
 
