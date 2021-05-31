@@ -1,25 +1,35 @@
+" vim: foldmarker={,} foldlevel=0 foldmethod=marker :
+
 set nocompatible
 set backspace=indent,eol,start
+
+
+""" 展示 {
+syntax enable
+syntax on
 
 set number
 set ruler
 set nowrap
 
+set cursorline
+set cursorcolumn
+
 set nobackup
 set nowritebackup
 " set noswapfile
 
-set cursorline
-set cursorcolumn
+set updatetime=300
+set signcolumn=number
 
-syntax enable
-syntax on
+""" }
 
-" set ignorecase
-
+""" 折叠 {
 set foldmethod=syntax
 set nofoldenable
+""" }
 
+""" 编辑 {
 set tabstop=4
 set shiftwidth=4
 set softtabstop=4
@@ -32,7 +42,9 @@ filetype on
 filetype indent on
 filetype plugin on
 filetype plugin indent on
+""" }
 
+""" 插件 {
 call plug#begin('~/.vim/plugged')
 
 Plug 'easymotion/vim-easymotion'
@@ -45,4 +57,5 @@ Plug 'kana/vim-textobj-entire'
 
 call plug#end()
 
+""" }
 
