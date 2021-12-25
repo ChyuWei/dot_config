@@ -19,6 +19,9 @@ set nobackup
 set nowritebackup
 " set noswapfile
 
+set cursorline
+set cursorcolumn
+
 set updatetime=300
 set signcolumn=number
 
