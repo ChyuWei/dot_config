@@ -3,8 +3,9 @@
 (push (expand-file-name "lisp" user-emacs-directory) load-path)
 
 (require 'init-core)
+(require 'init-ui)
 (require 'init-edit)
-(require 'init-tool)
+(require 'init-util)
 
 (provide 'init)
 

@@ -10,4 +10,9 @@
 ;; init package later
 (setq package-enable-at-startup nil)
 
+(setq menu-bar-mode nil
+      tool-bar-mode nil
+      scroll-bar-mode nil)
+(setq use-dialog-box nil)
+
 (provide 'early-init)

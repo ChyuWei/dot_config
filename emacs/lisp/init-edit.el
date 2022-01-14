@@ -28,6 +28,7 @@
 
 (use-package smartparens
   :ensure t
+  :diminish
   :config (require 'smartparens-config)
   :hook (prog-mode . smartparens-mode))
 
