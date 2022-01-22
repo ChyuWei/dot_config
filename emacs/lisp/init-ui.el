@@ -1,4 +1,4 @@
-(setq visible-bell nil
+(setq visible-bell t
       inhibit-compacting-font-caches t
       delete-by-moving-to-trash t
       make-backup-files nil
@@ -21,6 +21,11 @@
 
 ;; misc
 (fset 'yes-or-no-p 'y-or-n-p)
+(setq display-time-24hr-format t
+      display-time-day-and-date t)
 (setq ring-bell-function 'ignore)
 
+(when (display-graphic-p)
+  (bind-keys ("C-S-<return>" . toggle-frame-fullscreen)
+             ("M-S-<return>" . toggle-frame-maximized)))
 (provide 'init-ui)
