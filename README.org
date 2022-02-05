@@ -10,6 +10,11 @@
 - 混成器 [[picom][file:config/picom/]
 - 锁屏 [[betterlockscreen][file:config/betterlockscreenrc]
 
+** 工具
+- thunar 文件管理器
+- Parcellite 剪切板管理器
+- atril pdf阅读器
+
 ** 编辑器
 
 *** TODO emacs
