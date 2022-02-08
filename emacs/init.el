@@ -2,6 +2,14 @@
 
 (push (expand-file-name "lisp" user-emacs-directory) load-path)
 
+(unless (or (daemonp) noninteractive)
+  (let ((old-file-name-handler-alist file-name-handler-alist))
+    (add-hook 'emacs-startup-hook
+              (lambda ()
+                (setq file-name-handler-alist
+                      (delete-dups (append file-name-handler-alist
+                                           old-file-name-handler-alist)))))))
+
 (require 'init-core)
 (require 'init-ui)
 (require 'init-edit)

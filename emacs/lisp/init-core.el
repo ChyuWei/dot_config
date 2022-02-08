@@ -2,10 +2,13 @@
 
 ;; init package.el
 (setq package-archives
-      '(("gnu" . "https://mirrors.sjtug.sjtu.edu.cn/emacs-elpa/gnu/")
-        ("melpa" . "https://mirrors.sjtug.sjtu.edu.cn/emacs-elpa/melpa/")))
+      '(("gnu" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
+        ("melpa" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
 
-(require 'package)
+(setq package-user-dir
+      (expand-file-name (format "elpa-%s.%s" emacs-major-version emacs-minor-version)
+                        user-emacs-directory))
+
 (unless (bound-and-true-p package--initialized)
   (package-initialize))
 
@@ -14,19 +17,19 @@
   (package-refresh-contents)
   (package-install 'use-package))
 
+(eval-and-compile
+  (setq use-package-always-ensure t)
+  (setq use-package-always-defer t)
+  (setq use-package-expand-minimally t))
+
 (eval-when-compile
   (require 'use-package))
 
-(use-package gcmh
-  :ensure t
-  :diminish
-  :init
-  (setq gcmh-idle-delay 5
-        gcmh-high-cons-threshold #x1000000)
-  (gcmh-mode 1))
+(use-package diminish)
+(use-package bind-key)
 
-(use-package server
-  :hook (after-init . server-mode))
+(use-package gnu-elpa-keyring-update)
+
 
 ;; encoding
 (set-charset-priority 'unicode)
@@ -40,5 +43,34 @@
 (set-keyboard-coding-system 'utf-8)
 (set-terminal-coding-system 'utf-8)
 (set-selection-coding-system 'utf-8)
+
+(use-package gcmh
+  :diminish
+  :init (gcmh-mode 1))
+
+(use-package server
+  :ensure nil
+  :hook (after-init . server-mode))
+
+(use-package simple
+  :ensure nil
+  :hook ((after-init . size-indication-mode)
+	 (text-mode . visual-line-mode))
+  :init
+  (setq column-number-mode t
+	line-number-mode t))
+
+(use-package time
+  :ensure nil
+  :init (setq display-time-24hr-format t
+	      display-time-day-and-date t))
+
+(fset 'yes-or-no-p 'y-or-n-p)
+
+(setq visible-bell t
+      inhibit-compacting-font-caches t
+      delete-by-moving-to-trash t
+      make-backup-files nil
+      auto-save-default nil)
 
 (provide 'init-core)
