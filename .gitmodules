@@ -1,0 +1,3 @@
+[submodule "dwm_config/dwm"]
+	path = dwm_config/dwm
+	url = https://git.suckless.org/dwm
