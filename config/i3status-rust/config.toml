@@ -1,5 +1,8 @@
-theme = "plain"
-icons = "material"
+icons = "awesome5"
+[theme]
+name = "semi-native"
+[theme.overrides]
+separator = ""
 
 [[block]]
 block = "focused_window"
