@@ -8,6 +8,7 @@
               require-final-newline t)
 
 (use-package ivy
+  :straight t
   :hook (after-init . ivy-mode))
 
 (use-package subword
@@ -37,15 +38,19 @@
   :bind (:map hs-minor-mode-map
               ("C-`" . hs-toggle-hiding)))
 
-(use-package imenu
-  :ensure nil
-  :bind (("C-." . imenu)))
-
-(use-package sudo-edit)
-
 (use-package company
+  :straight t
   :diminish
   :hook (after-init . global-company-mode)
   :bind (("M-/" . company-complete)))   
+
+(use-package evil
+  :straight t
+  :config (evil-mode 1))
+
+(use-package evil-collection
+  :straight t
+  :after eval
+  :config (evil-collection-init))
 
 (provide 'init-edit)

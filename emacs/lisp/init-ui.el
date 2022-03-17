@@ -9,9 +9,10 @@
       window-resize-pixelwise nil)
 
 (use-package hl-line
-  :ensure nil
   :hook (after-init . global-hl-line-mode))
 
 (show-paren-mode 1)
+
+(set-face-attribute 'default nil :font "Monaco")
 
 (provide 'init-ui)

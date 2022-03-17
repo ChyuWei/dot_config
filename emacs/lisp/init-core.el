@@ -1,35 +1,5 @@
 ;;; init-core.el --- Core Package and Config -*- lexical-binding: t; -*-
 
-;; init package.el
-(setq package-archives
-      '(("gnu" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
-        ("melpa" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
-
-(setq package-user-dir
-      (expand-file-name (format "elpa-%s.%s" emacs-major-version emacs-minor-version)
-                        user-emacs-directory))
-
-(unless (bound-and-true-p package--initialized)
-  (package-initialize))
-
-;; init use-package
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
-
-(eval-and-compile
-  (setq use-package-always-ensure t)
-  (setq use-package-always-defer t)
-  (setq use-package-expand-minimally t))
-
-(eval-when-compile
-  (require 'use-package))
-
-(use-package diminish)
-(use-package bind-key)
-
-(use-package gnu-elpa-keyring-update)
-
 
 ;; encoding
 (set-charset-priority 'unicode)
@@ -44,13 +14,10 @@
 (set-terminal-coding-system 'utf-8)
 (set-selection-coding-system 'utf-8)
 
-(use-package gcmh
-  :diminish
-  :init (gcmh-mode 1))
-
 (use-package server
   :ensure nil
-  :hook (after-init . server-mode))
+  :config (unless (server-running-p)
+            (server-start)))
 
 (use-package simple
   :ensure nil
