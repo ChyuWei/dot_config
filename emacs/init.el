@@ -1,14 +1,14 @@
 ;;; init.el --- Init file -*- lexical-binding: t; -*-
 
-(push (expand-file-name "lisp" user-emacs-directory) load-path)
+(setq gc-cons-threshold most-positive-fixnum
+      gc-cons-percentage 0.5)
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            "Recover GC"
+            (setq gc-cons-threshold #x4000000
+                  gc-cons-percentage 0.1)))
 
-(unless (or (daemonp) noninteractive)
-  (let ((old-file-name-handler-alist file-name-handler-alist))
-    (add-hook 'emacs-startup-hook
-              (lambda ()
-                (setq file-name-handler-alist
-                      (delete-dups (append file-name-handler-alist
-                                           old-file-name-handler-alist)))))))
+(push (expand-file-name "lisp" user-emacs-directory) load-path)
 
 (require 'init-core)
 (require 'init-ui)
