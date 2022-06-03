@@ -11,7 +11,7 @@
 (push (expand-file-name "lisp" user-emacs-directory) load-path)
 
 (require 'init-funcs)
-(proxy-http-enable)
+;;(proxy-http-enable)
 
 (require 'init-package)
 (require 'init-core)

@@ -1,4 +1,3 @@
-" vim: foldmarker={,} foldlevel=0 foldmethod=marker :
 
 set nocompatible
 set backspace=indent,eol,start

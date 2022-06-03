@@ -1,0 +1,6 @@
+local core = require('core.core')
+core.add_module(require('module.basic'))
+core.add_module(require('module.edit'))
+core.add_module(require('module.cmp'))
+core.add_module(require('module.ui'))
+core.setup()
