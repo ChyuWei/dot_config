@@ -1,4 +1,4 @@
-local util = require('util')
+-- local util = require('util')
 
 local M = {}
 
@@ -7,6 +7,7 @@ M.pkg = {
     'hrsh7th/cmp-buffer',
     'hrsh7th/cmp-path',
     'hrsh7th/cmp-cmdline',
+    'hrsh7th/cmp-nvim-lsp',
 }
 
 function M.setup()
@@ -20,6 +21,7 @@ function M.setup()
             { name = "path" },
             { name = "buffer" },
             { name = "calc" },
+            { name = "nvim-lsp"}
           },
           mapping = cmp.mapping.preset.insert({
             ["<C-n>"] = cmp.mapping.select_next_item(),
@@ -27,6 +29,13 @@ function M.setup()
             ["<C-b>"] = cmp.mapping.scroll_docs(4),
             ["<C-f>"] = cmp.mapping.scroll_docs(-4),
             ["<CR>"] = cmp.mapping.confirm({ select = true }),
+            ["<Tab>"] = cmp.mapping(function(fallback)
+                if cmp.visible() then
+                    cmp.select_next_item()
+                else
+                    fallback()
+                end
+            end)
           })
     })
     cmp.setup.cmdline('/', {
@@ -43,6 +52,7 @@ function M.setup()
             { name = 'cmdline' }
         })
     })
+
     M.keymap()
 end
 

@@ -4,6 +4,13 @@ return {
     keymap = function (mode, key, cmd)
         vim.api.nvim_set_keymap(mode, key, cmd, opts)
     end,
+    req = function (pkg)
+        local ok, p = pcall(require, pkg)
+        if not ok then
+            vim.notify(pkg .. ' not found!')
+        end
+        return ok, p
+    end
 }
 
 

@@ -9,7 +9,7 @@ M.pkg = {
     "nvim-lua/plenary.nvim",
 }
 
-function M.keymap() 
+function M.keymap()
     util.keymap("", ";", "<Nop>")
     vim.g.mapleader = ";"
     vim.g.maplocalleader = ";"
@@ -18,6 +18,10 @@ end
 function M.setup()
     M.keymap()
     require 'module.basic.options'
+    vim.o.runtimepath = vim.o.runtimepath .. ",~/.opam/default/share/merlin/vim"
 end
+
+-- pcall(require, 'impatient')
+require('impatient').enable_profile()
 
 return M
