@@ -267,7 +267,7 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
                             consult-yasnippet
                             which-key))
   (unless (display-graphic-p)
-    (push comp-package-used 'corfu-terminal))
+    (push 'corfu-terminal comp-package-used))
 
   (setq edit-package-used '(vundo
                             avy
