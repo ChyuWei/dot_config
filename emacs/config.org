@@ -1,0 +1,744 @@
+#+TITLE: emacs config
+#+AUTHOR: chyuwei
+#+DATE: 2023-12-29T16:37
+* emacs config
+记录emacs的配置，使用~org-babel-tangle~将具体配置拆分到elisp文件
+emacs版本
+- homebrew/cask/emacs stable 29.1
+
+1. 对插件简单记录，防止日后忘记
+2. 留下配置的变更记录
+* 启动
+emacs29有两个基础的启动文件~early-init.el~和~init.el~
+其中~early-init.el~启动的时间更早，早于图形和包管理
+** early-init.el
+:PROPERTIES:
+:HEADER-ARGS: :tangle early-init.el
+:END:
+关闭pacakge.el的初始过程，并且去掉一些不需要的ui组件，加速启动
+#+begin_src emacs-lisp
+  ;;; early-init.el --- early-init -*- lexical-binding: t -*-
+
+
+  ;;; Code:
+
+  ;; disable package.el
+  (setq package-enable-at-startup nil)
+
+  (setq gc-cons-threshold most-positive-fixnum
+        gc-cons-percentage 0.6)
+
+  (setq read-process-output-max (* 64 1024 1024))
+
+  (setq frame-inhibit-implied-resize t)
+  (setq inhibit-compacting-font-caches t)
+
+  ;; ui
+  (push '(menu-bar-lines . 0) default-frame-alist)
+  (push '(tool-bar-lines . 0) default-frame-alist)
+  (push '(vertical-scroll-bars) default-frame-alist)
+  (when (featurep 'ns)
+    (push '(ns-transparent-titlebar . t) default-frame-alist))
+  (push '(horizontal-scroll-bars) default-frame-alist)
+
+  (set-frame-parameter nil 'alpha-background 70)
+  (push '(alpha-background . 85) default-frame-alist)
+
+  (setq initial-frame-alist '((top . 0.5)
+                              (left . 0.5)
+                              (width . 0.628)
+                              (height . 0.8)
+                              (fullscreen)))
+
+  (provide 'early-init)
+
+  ;;; early-init.el ends here
+#+end_src
+** init.el
+:PROPERTIES:
+:HEADER-ARGS: :tangle init.el
+:END:
+这里仅做模块的调用块，具体行为在模块中实现
+模块划分可能不合理，以后再说
+#+begin_src emacs-lisp 
+  ;;; init.el --- init -*- lexical-binding: t -*-
+
+
+  ;;; Code:
+
+  (push (expand-file-name "lisp" user-emacs-directory) load-path)
+  (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+
+  (require 'better-default)
+  (require 'defines)
+  (require 'init-package)
+  (require 'init-base)
+  (require 'init-ui)
+  (require 'init-completion)
+  (require 'init-editing)
+  (require 'init-prog)
+  (require 'init-org)
+
+  (provide 'init)
+
+  ;;; init.el ends here
+#+end_src
+* 模块
+** better-defualt
+:PROPERTIES:
+:HEADER-ARGS: :tangle lisp/better-default.el
+:END:
+对原生emacs做了基本的配置，没有使用额外的插件
+
+#+begin_src emacs-lisp
+  ;;; better-default.el --- better default -*- lexical-binding: t -*-
+
+
+  ;;; Code:
+
+  (setq inhibit-startup-message t)
+  (setq initial-major-mode 'fundamental-mode
+        initial-scratch-message nil)
+
+  ;; disable #xx.el ~xx.el
+  (setq make-backup-files nil
+        auto-save-default nil)
+
+  (setq ring-bell-function 'ignore
+        visual-bell nil)
+
+  (if (boundp 'use-short-answers)
+      (setq use-short-answers t)
+    (fset 'yes-no-no-p 'y-or-n-p))
+
+  (setq delete-by-moving-to-trash t)
+
+  (setq window-resize-pixelwise t
+        frame-resize-pixelwise t)
+
+  (setq blink-cursor-mode nil)
+  (setq sentence-end-double-space nil)
+
+  ;; scroll
+  (setq scroll-step 1
+        scroll-margin 0
+        auto-window-vscroll nil
+        scroll-preserve-screen-position t)
+
+  ;; mouse
+  (setq mouse-wheel-scroll-amount '(1 ((shift) . hscroll))
+        mouse-wheel-scroll-amount-horizontal 1
+        mouse-wheel-progressive-speed nil)
+
+  (setq idle-update-delay 1.0)
+  (setq fast-but-imprecise-scrolling t)
+  (setq redisplay-skip-fontification-on-input t)
+
+  (setq-default fill-column 120
+                tab-width 4
+                indent-tabs-mode nil)
+
+  ;; modeline 
+  (size-indication-mode)
+  (setq column-number-mode t
+        line-number-mode t)
+
+  (setq line-move-visual nil
+        track-eol t)
+
+  (add-hook 'after-init-hook 'global-auto-revert-mode)
+  (add-hook 'after-init-hook 'global-so-long-mode)
+  (add-hook 'after-init-hook 'global-subword-mode)
+  (add-hook 'after-init-hook 'delete-selection-mode)
+
+  ;; encoding
+  (when (fboundp 'set-charset-priority)
+    (set-charset-priority 'unicode))
+  (prefer-coding-system 'utf-8)
+  (setq locale-coding-system 'utf-8)
+  (setq system-time-locale "C")
+  (set-selection-coding-system 'utf-8)
+
+  (provide 'better-default)
+
+  ;;; better-default.el ends here
+
+#+end_src
+** defines
+:PROPERTIES:
+:HEADER-ARGS: :tangle lisp/defines.el
+:END:
+定义一些常量和函数
+#+begin_src emacs-lisp
+  ;;; defines.el --- defines -*- lexical-binding: t -*-
+
+
+  ;;; Code:
+
+  (defconst os/linuxp
+    (eq system-type 'gnu/linux))
+
+  (defconst os/macp
+    (eq system-type 'darwin))
+
+
+  ;; ui function
+  (defun font-installed-p (font-name)
+    (find-font (font-spec :name font-name)))
+
+  (defvar after-load-theme-hook nil)
+  (defun run-after-load-theme-hook (&rest _)
+    (run-hooks 'after-load-theme-hook))
+  (advice-add #'load-theme :after #'run-after-load-theme-hook)
+
+  ;; helper function
+  (defun insert-timestamp ()
+    (interactive)
+    (insert (format-time-string "%Y-%m-%dT%H:%M")))
+
+  (provide 'defines)
+
+  ;;; defines.el ends here
+#+end_src
+** init-package
+:PROPERTIES:
+:HEADER-ARGS: :tangle lisp/init-package.el
+:END:
+初始化包管理工具，这里使用了~straight.el~。因为对比后发现初始化时，~straight.el~比自带的~package.el~快一倍
+同时这里定义并加载了所有要使用的三方包
+#+begin_src emacs-lisp
+  ;;; init-package.el --- init package config -*- lexical-binding: t -*-
+
+
+  ;;; Code:
+
+  ;; package.el
+  (setq package-archives '(("gnu"    . "http://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
+                           ("nongnu" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")
+                           ("melpa"  . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
+  ;; (package-initialize)
+
+  ;; straight.el
+  (defvar bootstrap-version)
+  (let ((bootstrap-file
+         (expand-file-name
+          "straight/repos/straight.el/bootstrap.el"
+          (or (bound-and-true-p straight-base-dir)
+              user-emacs-directory)))
+        (bootstrap-version 7))
+    (unless (file-exists-p bootstrap-file)
+      (with-current-buffer
+          (url-retrieve-synchronously
+           "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+           'silent 'inhibit-cookies)
+        (goto-char (point-max))
+        (eval-print-last-sexp)))
+    (load bootstrap-file nil 'nomessage))
+
+  (setq use-package-always-defer t
+        use-package-expand-minimally t
+        use-package-enable-imenu-support t)
+
+  (use-package diminish :straight t)
+  (use-package bind-key :straight nil)
+  (use-package gnu-elpa-keyring-update :straight t)
+
+  (setq base-package-used '(esup
+                            gcmh
+                            exec-path-from-shell
+                            saveplace
+                            recentf
+                            savehist
+                            ibuffer
+                            ;; dired builtin
+                            diredfl
+                            pretty-hydra))
+
+  (setq ui-package-used '(doom-themes))
+
+  (setq comp-package-used '(orderless
+                            vertico
+                            marginalia
+                            corfu
+                            cape
+                            yasnippet
+                            yasnippet-snippets
+                            consult
+                            consult-yasnippet
+                            which-key))
+  (unless (display-graphic-p)
+    (push comp-package-used 'corfu-terminal))
+
+  (setq edit-package-used '(vundo
+                            avy
+                            avy-zap
+                            mwim
+                            comment-dwim-2
+                            hungry-delete
+                            expand-region
+                            ;; exectric-pair-mode builtin
+                            goto-chg
+                            ;; hideshow buildin
+                            iedit))
+
+  (setq prog-package-used '(treesit-auto
+                            ;; eldoc builtin
+                            ;; xref builtin
+                            editorconfig
+                            lsp-mode
+                            rustic))
+
+  (setq org-package-used '(org
+                           org-modern
+                           toc-org))
+
+  (let ((pkgs (append base-package-used
+                      ui-package-used
+                      comp-package-used
+                      edit-package-used
+                      prog-package-used
+                      org-package-used)))
+    (dolist (pkg pkgs)
+      (straight-use-package pkg)))
+
+  (provide 'init-package)
+
+  ;;; init-package.el ends here
+#+end_src
+** inti-base
+:PROPERTIES:
+:HEADER-ARGS: :tangle lisp/init-base.el
+:END:
+- *esup* 用来做profile
+- *gcmh* gc黑魔法
+- *exec-path-from-shell* 读取环境变量
+- *pretty-hydra* 简化定义hydra的方式，用于自定义一套快捷绑定
+#+begin_src emacs-lisp
+  ;;; init-base.el --- init base package -*- lexical-binding: t -*-
+
+  ;;; Code:
+
+  ;; benchmark
+  (use-package esup)
+
+  ;; magic gc
+  (use-package gcmh
+   :diminish
+   :hook (emacs-startup . gcmh-mode)
+   :init (setq gcmh-idle-delay 'auto
+               gcmh-auto-idle-delay-factor 10
+                gcmh-high-cons-threshold #x1000000))
+
+  ;; PATH
+  (use-package exec-path-from-shell
+    :if os/macp
+    :init (exec-path-from-shell-initialize))
+
+  ;; remeber last point
+  (use-package saveplace
+    :hook (after-init . save-place-mode))
+
+  ;; remeber open files
+  (use-package recentf
+    :hook (after-init . recentf-mode)
+    :bind (("C-x C-r" . recentf-open-files))
+    :init (setq recentf-max-saved-items 300
+                 recentf-exclude '("\\.?cache" ".cask" "url" "COMMIT_EDITMSG\\'" "bookmarks"
+                                  "\\.\\(?:gz\\|gif\\|svg\\|png\\|jpe?g\\|bmp\\|xpm\\)$"
+                                  "\\.?ido\\.last$" "\\.revive$" "/G?TAGS$" "/.elfeed/"
+                                  "^/tmp/" "^/var/folders/.+$" "^/ssh:" "/persp-confs/"
+                                  (lambda (file) (file-in-directory-p file package-user-dir)))))
+
+  ;; remeber used command
+  (use-package savehist
+    :hook (after-init . savehist-mode)
+    :init (setq enable-recursive-minibuffers t
+                history-length 1000
+                savehist-autosave-interval 300))
+
+  ;; better buffer list
+  (use-package ibuffer
+    :bind ("C-x C-b" . ibuffer))
+
+  ;; tweak file manage
+  (use-package dired
+    :bind (:map dired-mode-map ("M-p" . dired-up-directory))
+    :config
+    (setq dired-dwim-target t
+          dired-recursive-deletes 'always
+          dired-recursive-copy 'always
+          dired-kill-when-opening-new-dired-buffer t))
+    
+  (use-package diredfl
+    :hook (dired-mode . diredfl-mode))
+
+  ;; short keybinding
+  (use-package pretty-hydra
+    :bind ("M-SPC" . toggle-hydra/body))
+
+  (pretty-hydra-define toggle-hydra (:title "hydra" :quit-key ("q" "C-g"))
+    ("Basic"
+     (("n" display-line-numbers-mode "line number" :toggle t))))
+
+  (provide 'init-base)
+
+  ;;; init-base.el ends here
+#+end_src
+** init-ui
+:PROPERTIES:
+:HEADER-ARGS: :tangle lisp/init-ui.el
+:END:
+配置主题和字体, 并且关闭一些不需要的默认ui组件
+#+begin_src emacs-lisp
+  ;;; init-ui.el --- init ui -*- lexical-binding: t -*-
+
+
+  ;;; Code:
+
+  (setq cursor-in-non-selected-windows nil
+        highlight-nonselected-windows nil)
+
+  (when os/macp
+    (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
+    (add-to-list 'default-frame-alist '(ns-appearance . t)))
+
+  ;; theme
+  ;; (load-theme 'wheatgrass t)
+  (use-package doom-themes
+    :init
+    (setq doom-themes-enable-bold t
+          doom-themes-enable-italic t)
+    (load-theme 'doom-dark+ t))           
+
+
+  ;; font
+  (setq my-default-font-list '("Cascadia Code" "Fira Code" "Jetbrains Mono" "SF Mono" "Hack" "Source Code Pro" "Menlo"
+                               "Monaco" "DejaVu Sans Mono" "Consolas")
+        my-mode-line-font-list '("Menlo" "SF Pro Display" "Helvetica")
+        my-unicode-font-list '("Segoe UI Symbol" "Symbola" "Symbol")
+        my-emoji-font-list '("Noto Color Emoji" "Apple Color Emoji" "Segoe UI Emoji")
+        my-chinese-font-list '("LXGW WenKai Screen" "WenQuanYi Micro Hei Mono" "PingFang SC" "Microsoft Yahei UI"
+                               "Simhei"))
+
+
+  (when (display-graphic-p)
+    ;; Set default font
+    (cl-loop for font in my-default-font-list
+             when (font-installed-p font)
+             return (set-face-attribute 'default nil
+                                        :family font
+                                        :height 150))
+
+    ;; Set mode-line font
+    (cl-loop for font in my-mode-line-font-list
+             when (font-installed-p font)
+             return (progn
+                      (set-face-attribute 'mode-line nil :family font :height 120)
+                      (when (facep 'mode-line-active)
+                        (set-face-attribute 'mode-line-active nil :family font :height 120))
+                      (set-face-attribute 'mode-line-inactive nil :family font :height 120)))
+
+    ;; Specify font for all unicode characters
+    (cl-loop for font in my-unicode-font-list
+             when (font-installed-p font)
+             return (if (< emacs-major-version 27)
+                        (set-fontset-font "fontset-default" 'unicode font nil 'prepend)
+                      (set-fontset-font t 'symbol (font-spec :family font) nil 'prepend)))
+
+    ;; Emoji
+    (cl-loop for font in my-emoji-font-list
+             when (font-installed-p font)
+             return (cond
+                     ((< emacs-major-version 27)
+                      (set-fontset-font "fontset-default" 'unicode font nil 'prepend))
+                     ((< emacs-major-version 28)
+                      (set-fontset-font t 'symbol (font-spec :family font) nil 'prepend))
+                     (t
+                      (set-fontset-font t 'emoji (font-spec :family font) nil 'prepend))))
+
+    ;; Specify font for Chinese characters
+    (cl-loop for font in my-chinese-font-list
+             when (font-installed-p font)
+             return (progn
+                      (setq face-font-rescale-alist `((,font . 1.0)))
+                      (set-fontset-font t 'han (font-spec :family font)))))
+
+  (add-hook 'after-init-hook 'global-hl-line-mode)
+
+  (add-hook 'prog-mode-hook 'display-fill-column-indicator-mode)
+
+  (add-hook 'after-init-hook 'global-display-line-numbers-mode)
+  (setq display-line-numbers-width 3
+        display-line-numbers-grow-only t)
+
+  (add-hook 'after-init-hook 'show-paren-mode)
+  (setq show-paren-when-point-inside-paren t
+        show-paren-when-point-in-periphery t)
+
+  ;; misc
+  (setq use-file-dialog nil
+        use-dialog-box nil
+        inhibit-default-init t
+        inhibit-startup-screen t
+        inhibit-startup-message t
+        initial-scratch-message nil)
+
+  (provide 'init-ui)
+
+  ;;; init-ui.el ends here
+#+end_src
+
+** init-completion
+:PROPERTIES:
+:HEADER-ARGS: :tangle lisp/init-completion.el
+:END:
+#+begin_src emacs-lisp
+  ;;; init-completion.el --- init completion -*- lexical-binding: t -*-
+
+
+  ;;; Code:
+  (setq completion-cycle-threshold 3
+        tab-always-indent 'complete)
+
+  (use-package orderless
+    :custom
+    (completion-styles '(orderless basic))
+    (completion-category-override '((file (styles basic partial-completion)))))
+
+  (use-package vertico
+    :bind (:map vertico-map
+                ("RET" . vertico-directory-enter)
+                ("DEL" . vertico-directory-delete-char)
+                ("M-DEL" . vertico-directory-delete-word))
+    :hook ((after-init . vertico-mode)
+           (vertico-mode . vertico-mouse-mode)
+           (rfn-eshadow-update-overlay . vertico-directory-tidy)))
+
+  (use-package marginalia
+    :hook (after-init . marginalia-mode))
+
+  (use-package corfu
+    ;; Optional customizations
+    :custom
+    (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
+    (corfu-auto t)                 ;; Enable auto completion
+    (corfu-auto-delay 0.1)
+    (corfu-auto-prefix 2)
+    (corfu-quit-no-match 'separator)
+    
+    ;; (corfu-separator ?\s)          ;; Orderless field separator
+    ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
+    ;; (corfu-quit-no-match nil)      ;; Never quit, even if there is no match
+    ;; (corfu-preview-current nil)    ;; Disable current candidate preview
+    ;; (corfu-preselect 'prompt)      ;; Preselect the prompt
+    ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
+    ;; (corfu-scroll-margin 5)        ;; Use scroll margin
+
+    ;; Recommended: Enable Corfu globally.
+    ;; This is recommended since Dabbrev can be used globally (M-/).
+    ;; See also `global-corfu-modes'.
+    :hook ((after-init . global-corfu-mode)))
+
+  (unless (display-graphic-p)
+    (use-package corfu-terminal
+      :init (corfu-terminal-mode +1)))
+
+  (use-package cape
+    :init
+    (add-to-list 'completion-at-point-functions #'cape-file)
+    (add-to-list 'completion-at-point-functions #'cape-elisp-block)
+    (add-to-list 'completion-at-point-functions #'cape-keyword)
+    (add-to-list 'completion-at-point-functions #'cape-abbrev)
+    (add-to-list 'completion-at-point-functions #'cape-dabbrev))
+
+  (use-package yasnippet
+    :diminish
+    :hook (after-init . yas-global-mode))
+  (use-package yasnippet-snippets)
+
+  (use-package consult
+    :bind (("C-c M-x" . consult-mode-command)
+           ("C-x b"  . consult-buffer)
+           ("M-y" . consult-yank-pop)
+           ("M-g g" . consult-goto-line)
+           ("M-g w" . consult-flymake)
+           ("M-s l" . consult-line)       
+           ("M-s f" . consult-fd)         ;; find file by name
+           ("M-s g" . consult-ripgrep)    ;; find file by content
+           ([remap recentf-open-files] . consult-recent-file)
+           ([remap imenu] . consult-imenu)))
+
+  ;; use consult find snippet
+  (use-package consult-yasnippet
+    :bind ("M-g y" . consult-yasnippet))
+
+  ;; fix which-key prefix
+  (use-package which-key
+    :hook (after-init . which-key-mode)
+    :init
+    (setq which-key-max-description-length 30
+          which-key-lighter nil
+          which-key-show-remaining-keys t)
+    (which-key-add-key-based-replacements "C-c @" "hideshow")
+    (which-key-add-key-based-replacements "C-c &" "yasnippet")
+    (which-key-add-key-based-replacements "C-x 8" "unicode")
+    (which-key-add-key-based-replacements "C-x 8 e" "emoji")
+    (which-key-add-key-based-replacements "C-x a" "abbrev")
+    (which-key-add-key-based-replacements "C-x n" "narrow")
+    (which-key-add-key-based-replacements "C-x p" "project")
+    (which-key-add-key-based-replacements "C-x r" "rect / bookmark")
+    (which-key-add-key-based-replacements "C-x t" "tab")
+    (which-key-add-key-based-replacements "C-x RET" "coding-system"))
+   
+  (provide 'init-completion)
+
+  ;;; init-completion.el ends here
+#+end_src
+
+** init-editing
+:PROPERTIES:
+:HEADER-ARGS: :tangle lisp/init-editing.el
+:END:
+#+begin_src emacs-lisp
+  ;;; init-editing.el --- init editing -*- lexical-binding: t -*-
+
+
+  ;;; Code:
+
+  (use-package vundo
+    :bind ("C-x u" . vundo)
+    :config (setq vundo-glyph-alist vundo-unicode-symbols))
+
+  (use-package avy
+    :bind (("C-'" . avy-goto-char-2))
+    :hook (after-init . avy-setup-default))
+
+  (use-package avy-zap
+    :bind (("M-z" . avy-zap-to-char-dwim)
+           ("M-Z" . avy-zap-up-to-char-dwim)))
+
+  (use-package mwim
+    :bind (([remap move-beginning-of-line] . mwim-beginning)
+           ([remap move-end-of-line] . mwim-end)))
+
+  (use-package comment-dwim-2
+    :bind (("M-;" . comment-dwim-2)))
+
+  ;; delete whitespace hungrily
+  (use-package hungry-delete
+    :diminish
+    :hook (after-init . global-hungry-delete-mode)
+    :init (setq hungry-delete-chars-to-skip " \t\f\v"
+                hungry-delete-join-reluctantly t))
+
+  (use-package expand-region
+    :bind ("C-=" . er/expand-region)
+    :config
+    (defun treesit-mark-bigger-node ()
+        "Use tree-sitter to mark regions."
+        (let* ((root (treesit-buffer-root-node))
+               (node (treesit-node-descendant-for-range root (region-beginning) (region-end)))
+               (node-start (treesit-node-start node))
+               (node-end (treesit-node-end node)))
+          ;; Node fits the region exactly. Try its parent node instead.
+          (when (and (= (region-beginning) node-start) (= (region-end) node-end))
+            (when-let ((node (treesit-node-parent node)))
+              (setq node-start (treesit-node-start node)
+                    node-end (treesit-node-end node))))
+          (set-mark node-end)
+          (goto-char node-start)))
+      (add-to-list 'er/try-expand-list 'treesit-mark-bigger-node))
+
+  (use-package electric-pair-mode
+    :hook (prog-mode . electric-pair-mode))
+
+  (use-package goto-chg
+    :bind (("C-," . goto-last-change)))
+
+  (use-package hideshow
+    :diminish hs-minor-mode
+    :hook (prog-mode . hs-minor-mode)
+    :pretty-hydra
+    ((:title "hideshow" :quit-key ("q" "C-g"))
+     ("Fold"
+      (("h" hs-hide-block "hide block")
+       ("s" hs-show-block "show block"))))
+    :bind (:map hs-minor-mode-map
+                ("C-~" . hideshow-hydra/body)))
+
+  (use-package iedit
+    :bind (("C-;" . iedit-mode)
+           :map isearch-mode-map ("C-;" . iedit-mode-from-isearch)
+           :map esc-map ("C-;" . iedit-execute-last-modification)))
+
+
+  (provide 'init-editing)
+
+
+  ;;; init-editing.el ends here
+#+end_src
+
+** init-prog
+:PROPERTIES:
+:HEADER-ARGS: :tangle lisp/init-prog.el
+:END:
+#+begin_src emacs-lisp
+  ;;; init-prog.el --- init program config -*- lexical-binding: t -*-
+
+
+  ;;; Code:
+
+  (use-package treesit-auto
+    :hook (after-init . global-treesit-auto-mode)
+    :init (setq treesit-auto-install 'prompt))
+
+  (use-package eldoc :diminish)
+
+  (use-package xref
+    :init
+    (setq xref-search-program 'ripgrep
+          xref-show-definitions-function #'xref-show-definitions-completing-read
+          xref-show-xrefs-function #'xref-show-definitions-completing-read))
+
+  (use-package editorconfig
+    :diminish
+    :hook (after-init . editorconfig-mode))
+
+  ;; lsp
+  (use-package lsp-mode)
+
+  ;; rust
+  (use-package rustic)
+
+  (provide 'init-prog)
+
+  ;;; init-prog.el ends here
+#+end_src
+
+** init-org
+:PROPERTIES:
+:HEADER-ARGS: :tangle lisp/init-org.el
+:END:
+#+begin_src emacs-lisp
+  ;;; init-org.el --- init org mode -*- lexical-binding: t -*-
+
+
+  ;;; Code:
+  (use-package org
+    :bind (("C-c a" . org-agenda)
+           ("C-c b" . org-switchb)
+           ("C-c x" . org-capture)))
+
+  (use-package org-modern
+    :hook ((org-mode . org-modern-mode)
+           (org-agenda-finalize . org-modern-agenda)))
+
+  (use-package toc-org
+    :hook (org-mode . toc-org-mode))
+
+
+  (provide 'init-org)
+
+  ;;; init-org.el ends here
+#+end_src
+
