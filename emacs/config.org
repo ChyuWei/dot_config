@@ -1,6 +1,8 @@
 #+TITLE: emacs config
 #+AUTHOR: chyuwei
 #+DATE: 2023-12-29T16:37
+#+STARTUP: overview logdrawer
+
 * emacs config
 记录emacs的配置，使用~org-babel-tangle~将具体配置拆分到elisp文件
 emacs版本
@@ -252,9 +254,13 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
                             ibuffer
                             ;; dired builtin
                             diredfl
+                            no-littering
+                            magit
                             pretty-hydra))
 
-  (setq ui-package-used '(doom-themes))
+  (setq ui-package-used '(
+                          ;; doom-themes
+                          ))
 
   (setq comp-package-used '(orderless
                             vertico
@@ -286,7 +292,9 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
                             ;; xref builtin
                             editorconfig
                             lsp-mode
-                            rustic))
+                            rustic
+                            go-mode
+                            consult-lsp))
 
   (setq org-package-used '(org
                            org-modern
@@ -309,10 +317,16 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 :PROPERTIES:
 :HEADER-ARGS: :tangle lisp/init-base.el
 :END:
+:LOGBOOK:
+- Note taken on [2023-12-30 Sat 18:26] \\
+  增加no-littering和magit
+:END:
 - *esup* 用来做profile
 - *gcmh* gc黑魔法
 - *exec-path-from-shell* 读取环境变量
 - *pretty-hydra* 简化定义hydra的方式，用于自定义一套快捷绑定
+- *no-littering* 各个mode生成的记录文件统一放到var和etc
+- *magit* git管理 
 #+begin_src emacs-lisp
   ;;; init-base.el --- init base package -*- lexical-binding: t -*-
 
@@ -372,6 +386,11 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
   (use-package diredfl
     :hook (dired-mode . diredfl-mode))
 
+  (use-package no-littering
+    :demand t)
+
+  (use-package magit)
+
   ;; short keybinding
   (use-package pretty-hydra
     :bind ("M-SPC" . toggle-hydra/body))
@@ -388,6 +407,10 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 :PROPERTIES:
 :HEADER-ARGS: :tangle lisp/init-ui.el
 :END:
+:LOGBOOK:
+- Note taken on [2023-12-30 Sat 18:27] \\
+  卡顿，去掉doom-themes
+:END:
 配置主题和字体, 并且关闭一些不需要的默认ui组件
 #+begin_src emacs-lisp
   ;;; init-ui.el --- init ui -*- lexical-binding: t -*-
@@ -403,12 +426,12 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
     (add-to-list 'default-frame-alist '(ns-appearance . t)))
 
   ;; theme
-  ;; (load-theme 'wheatgrass t)
-  (use-package doom-themes
-    :init
-    (setq doom-themes-enable-bold t
-          doom-themes-enable-italic t)
-    (load-theme 'doom-dark+ t))           
+  (load-theme 'wheatgrass t)
+  ;; (use-package doom-themes
+  ;;   :init
+  ;;   (setq doom-themes-enable-bold t
+  ;;         doom-themes-enable-italic t)
+  ;;   (load-theme 'doom-dark+ t))
 
 
   ;; font
@@ -565,7 +588,7 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
            ("M-s l" . consult-line)       
            ("M-s f" . consult-fd)         ;; find file by name
            ("M-s g" . consult-ripgrep)    ;; find file by content
-           ([remap recentf-open-files] . consult-recent-file)
+           ;; ([remap recentf-open-files] . consult-recent-file)
            ([remap imenu] . consult-imenu)))
 
   ;; use consult find snippet
@@ -682,6 +705,10 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 :PROPERTIES:
 :HEADER-ARGS: :tangle lisp/init-prog.el
 :END:
+:LOGBOOK:
+- Note taken on [2023-12-30 Sat 21:30] \\
+  增加go-mode并且配置lsp
+:END:
 #+begin_src emacs-lisp
   ;;; init-prog.el --- init program config -*- lexical-binding: t -*-
 
@@ -705,10 +732,21 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
     :hook (after-init . editorconfig-mode))
 
   ;; lsp
-  (use-package lsp-mode)
+  (use-package lsp-mode
+    :init (setq lsp-keymap-prefix "C-c l")
+    :config
+    (lsp-enable-which-key-integration)
+    (use-package consult-lsp
+      :bind (:map lsp-mode-map
+                  ("M-g l" . consult-lsp-symbols))))
 
   ;; rust
   (use-package rustic)
+
+  ;; go
+  (use-package go-mode
+    :hook ((go-mode . lsp-deferred)
+           (go-ts-mode . lsp-deferred)))
 
   (provide 'init-prog)
 
