@@ -285,9 +285,9 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
                             magit
                             pretty-hydra))
 
-  (setq ui-package-used '(
-                          ;; doom-themes
-                          ))
+  (setq ui-package-used '(nerd-icons
+                          doom-themes
+                          doom-modeline))
 
   (setq comp-package-used '(orderless
                             vertico
@@ -445,6 +445,9 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 
   ;;; Code:
 
+  (eval-when-compile
+    (require 'defines))
+
   (setq cursor-in-non-selected-windows nil
         highlight-nonselected-windows nil)
 
@@ -453,13 +456,21 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
     (add-to-list 'default-frame-alist '(ns-appearance . t)))
 
   ;; theme
-  (load-theme 'wheatgrass t)
-  ;; (use-package doom-themes
-  ;;   :init
-  ;;   (setq doom-themes-enable-bold t
-  ;;         doom-themes-enable-italic t)
-  ;;   (load-theme 'doom-dark+ t))
+  (if os/macp (load-theme 'wheatgrass t))
 
+  (use-package nerd-icons
+    :if os/linuxp)
+
+  (use-package doom-themes
+    :if os/linuxp
+    :init
+    (setq doom-themes-enable-bold t
+          doom-themes-enable-italic t)
+    (load-theme 'doom-dark+ t))
+
+  (use-package doom-modeline
+    :if os/linuxp
+    :hook (after-init . doom-modeline-mode))
 
   ;; font
   (setq my-default-font-list '("Cascadia Code" "Fira Code" "Jetbrains Mono" "SF Mono" "Hack" "Source Code Pro" "Menlo"
