@@ -183,6 +183,33 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
   (defconst os/macp
     (eq system-type 'darwin))
 
+  ;; proxy function
+  (defun proxy-socks-show ()
+    "Show SOCKS proxy."
+    (interactive)
+    (if (bound-and-true-p socks-noproxy)
+        (message "Current SOCKS%d proxy is %s:%s"
+                 (cadddr socks-server) (cadr socks-server) (caddr socks-server))
+      (message "No SOCKS proxy")))
+
+  (defun proxy-socks-enable ()
+    "Enable socks proxy"
+    (interactive)
+    (require 'socks)
+    (setq url-gateway-method 'socks
+          socks-noproxy '("localhost")
+          socks-server `("Default server" "127.0.0.1" 1080 5))
+    (setenv "all_proxy" "socks5://127.0.0.1:1080")
+    (proxy-socks-show))
+
+  (defun proxy-socks-disable ()
+    "Disable SOCKS proxy."
+    (interactive)
+    (setq url-gateway-method 'native
+          socks-noproxy nil
+          socks-server nil)
+    (setenv "all_proxy" "")
+    (proxy-socks-show))
 
   ;; ui function
   (defun font-installed-p (font-name)
