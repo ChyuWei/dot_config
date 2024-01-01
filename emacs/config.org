@@ -321,6 +321,7 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
                             lsp-mode
                             rustic
                             go-mode
+                            lsp-pyright
                             consult-lsp))
 
   (setq org-package-used '(org
@@ -785,6 +786,15 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
   (use-package go-mode
     :hook ((go-mode . lsp-deferred)
            (go-ts-mode . lsp-deferred)))
+
+  ;; c/c++
+  (add-hook 'c-mode-hook 'lsp-deferred)
+  (add-hook 'c-ts-mode-hook 'lsp-deferred)
+
+  ;; python
+  (use-package lsp-pyright)
+  (add-hook 'python-mode-hook (lambda () (require 'lsp-pyright) (lsp-deferred)))
+  (add-hook 'python-ts-mode-hook (lambda () (require 'lsp-pyright) (lsp-deferred)))
 
   (provide 'init-prog)
 

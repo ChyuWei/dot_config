@@ -4,17 +4,27 @@
 
 ** wm相关
 
-- 窗口管理器 [[i3-gaps][file:config/i3/]
-- 状态条 [[i3status-rust][file:config/i3status-rust/]
-- 通知管理器 [[dunst][file:config/dunst/]
-- 混成器 [[picom][file:config/picom/]
-- 锁屏 [[betterlockscreen][file:config/betterlockscreenrc]
+- 窗口管理器 [[file:config/i3/config][i3-gaps]]
+- 状态条 [[file:config/i3status-rust/config.toml][i3status-rust]]
+- 通知管理器 [[file:config/dunst/][dunst]]
+- 混成器 [[file:config/picom/][picom]]
+- 锁屏 [[file:config/betterlockscreenrc][betterlockscreen]]
+
+<2023-12-31 Sun>改用hyprland
+- sddm
+- hyprland [[file:config/hypr/hyprland.conf][hyprland.conf]]
+- mako
+- waybar
+- wofi
+- nm-applet
+- blueman-applet
+- alacritty
+- nekoray
 
 ** 工具
 - thunar 文件管理器
 - Parcellite 剪切板管理器
 - atril pdf阅读器
+- emacs [[file:emacs/config.org][emacs配置]]
 
-** 编辑器
 
-*** TODO emacs
