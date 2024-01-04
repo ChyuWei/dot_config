@@ -48,7 +48,7 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
   (push '(horizontal-scroll-bars) default-frame-alist)
 
   (set-frame-parameter nil 'alpha-background 70)
-  (push '(alpha-background . 85) default-frame-alist)
+  (push '(alpha-background . 70) default-frame-alist)
 
   (setq initial-frame-alist '((top . 0.5)
                               (left . 0.5)
@@ -187,6 +187,19 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
   (defconst os/macp
     (eq system-type 'darwin))
 
+  (defconst priconf/conf
+    (concat user-emacs-directory "config.org"))
+
+  (defun priconf/open ()
+    "Edit config.org"
+    (interactive)
+    (find-file priconf/conf))
+
+  (defun priconf/tangle ()
+    "Org tangle config.org"
+    (interactive)
+    (org-babel-tangle-file priconf/conf))
+
   ;; proxy function
   (defun proxy-socks-show ()
     "Show SOCKS proxy."
@@ -317,6 +330,7 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
                             goto-chg
                             ;; hideshow buildin
                             iedit
+                            ace-window
                             whitespace-cleanup-mode))
 
   (setq prog-package-used '(treesit-auto
@@ -427,13 +441,18 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 
   (use-package magit)
 
-  ;; short keybinding
   (use-package pretty-hydra
-    :bind ("M-SPC" . toggle-hydra/body))
+    :bind ("M-SPC" . global-toggle-hydra/body))
 
-  (pretty-hydra-define toggle-hydra (:title "hydra" :quit-key ("q" "C-g"))
-    ("Basic"
-     (("n" display-line-numbers-mode "line number" :toggle t))))
+  (pretty-hydra-define global-toggle-hydra
+    (:quit-key ("q" "C-g"))
+    ("Buffer"
+     (("[" previous-buffer "previous buffer")
+      ("x" kill-current-buffer "kill buffer" :exit t))
+     "Config"
+     (("cc" priconf/open "open config.rog" :exit t)
+      ("ct" priconf/tangle "tangle config.org" :exit t))))
+
 
   (provide 'init-base)
 
@@ -458,7 +477,8 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 
   (when os/macp
     (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
-    (add-to-list 'default-frame-alist '(ns-appearance . t)))
+    (add-to-list 'default-frame-alist '(ns-appearance . t))
+    (add-to-list 'default-frame-alist '(alpha 90 90)))
 
   ;; theme
   ;; (if os/macp (load-theme 'wheatgrass t))
@@ -667,6 +687,31 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 
 
   ;;; Code:
+
+  (use-package windmove)
+  (use-package winner-mode
+    :hook (after-init . winner-mode))
+
+  (use-package ace-window
+    :pretty-hydra
+    ((:title "Window" :quit-key ("q" "C-g"))
+     ("Action"
+      (("x" aw-delete-window "delete" :exit t)
+       ("r" split-window-right "split right" :exit t)
+       ("h" split-window-below "split below" :exit t)
+       ("u" winner-redo "redo" :exit t))
+      "Resize"
+      (("h" shrink-window-horizontally "Shrink -")
+       ("j" enlarge-window "Enlarge |")
+       ("k" shrink-window "Shrink |")
+       ("l" enlarge-window-horizontally "Enlarge -"))))
+    :init (setq aw-dispatch-always nil
+                aw-dispatch-alist '((?x aw-delete-window "Delete window")
+                                    (?s aw-swap-window "Swap window")
+                                    (?n aw-flip-window)
+                                    (?b balance-windows)))
+    :bind (([remap other-window] . ace-window)
+           ("C-c w" . ace-window-hydra/body)))
 
   (use-package vundo
     :bind ("C-x u" . vundo)
