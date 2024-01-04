@@ -339,6 +339,7 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
                             quickrun
                             editorconfig
                             lsp-mode
+                            lsp-ui
                             rustic
                             go-mode
                             lsp-pyright
@@ -827,12 +828,18 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 
   ;; lsp
   (use-package lsp-mode
+    :custom (lsp-completion-provider :none)
     :init (setq lsp-keymap-prefix "C-c l")
     :config
     (lsp-enable-which-key-integration)
     (use-package consult-lsp
       :bind (:map lsp-mode-map
                   ("M-g l" . consult-lsp-symbols))))
+
+  (use-package lsp-ui
+    :bind (:map lsp-ui-mode-map
+                ([remap xref-find-definitions] . lsp-ui-peek-find-definitions)
+                ([remap xref-find-references] . lsp-ui-peek-find-references)))
 
   ;; rust
   (use-package rustic)
