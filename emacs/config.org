@@ -822,7 +822,7 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
     :diminish
     :hook (after-init . editorconfig-mode))
 
-  (use-package cmake-mode)
+  ;; (use-package cmake-mode)
 
   (use-package thrift-mode)
 
