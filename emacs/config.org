@@ -330,6 +330,7 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
                             goto-chg
                             ;; hideshow buildin
                             iedit
+                            multiple-cursors
                             ace-window
                             whitespace-cleanup-mode))
 
@@ -779,6 +780,15 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
     :bind (("C-;" . iedit-mode)
            :map isearch-mode-map ("C-;" . iedit-mode-from-isearch)
            :map esc-map ("C-;" . iedit-execute-last-modification)))
+
+  (use-package multiple-cursors
+    :init (setq mc/always-run-for-all t)
+    :bind (("C-S-c C-S-c" . mc/edit-lines)
+           ("C->" . mc/mark-next-like-this)
+           ("C-M->" . mc/skip-to-next-like-this)
+           ("C-<" . mc/mark-previous-like-this)
+           ("C-M-<" . mc/skip-to-previous-like-this)
+           ("s-<mouse-1>" . mc/add-cursor-on-click)))
 
   (use-package whitespace-cleanup-mode
     :hook (prog-mode . whitespace-cleanup-mode))
