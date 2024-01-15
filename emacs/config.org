@@ -83,7 +83,7 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
   (require 'init-completion)
   (require 'init-editing)
   (require 'init-prog)
-  (require 'init-org)
+  (require 'init-tools)
 
   (provide 'init)
 
@@ -154,7 +154,6 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 
   (add-hook 'after-init-hook 'global-auto-revert-mode)
   (add-hook 'after-init-hook 'global-so-long-mode)
-  (add-hook 'after-init-hook 'global-subword-mode)
   (add-hook 'after-init-hook 'delete-selection-mode)
 
   ;; encoding
@@ -181,12 +180,14 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 
   ;;; Code:
 
+  ;; system define
   (defconst os/linuxp
     (eq system-type 'gnu/linux))
 
   (defconst os/macp
     (eq system-type 'darwin))
 
+  ;; config org file
   (defconst priconf/conf
     (concat user-emacs-directory "config.org"))
 
@@ -199,6 +200,21 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
     "Org tangle config.org"
     (interactive)
     (org-babel-tangle-file priconf/conf))
+
+  ;; transparent
+  (defun transparent-change (fn)
+    (let* ((alpha (or (frame-parameter nil 'alpha) 100))
+           (new-alpha (funcall fn alpha)))
+      (progn (set-frame-parameter nil 'alpha new-alpha)
+             (message "current alpha %d" new-alpha))))
+
+  (defun transparent-add ()
+    (interactive)
+    (transparent-change (lambda (x) (min 100 (+ x 10)))))
+
+  (defun transparent-sub ()
+    (interactive)
+    (transparent-change (lambda (x) (max 0 (- x 10)))))
 
   ;; proxy function
   (defun proxy-socks-show ()
@@ -289,18 +305,13 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
   (use-package bind-key :straight nil)
   (use-package gnu-elpa-keyring-update :straight t)
 
-  (setq base-package-used '(esup
-                            gcmh
+  (setq base-package-used '(gcmh
                             exec-path-from-shell
                             saveplace
                             recentf
                             savehist
                             ibuffer
-                            ;; dired builtin
-                            diredfl
-                            no-littering
-                            magit
-                            pretty-hydra))
+                            no-littering))
 
   (setq ui-package-used '(nerd-icons
                           doom-themes
@@ -310,24 +321,26 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
                             vertico
                             marginalia
                             corfu
+                            corfu-terminal
                             cape
                             yasnippet
                             yasnippet-snippets
                             consult
                             consult-yasnippet
-                            which-key))
-  (unless (display-graphic-p)
-    (push 'corfu-terminal comp-package-used))
+                            consult-flycheck))
 
-  (setq edit-package-used '(vundo
+  (setq edit-package-used '(anzu
+                            diff-hl
+                            vundo
+                            ;; exectric-pair-mode builtin
                             avy
-                            avy-zap
                             mwim
                             comment-dwim-2
                             hungry-delete
+                            easy-kill
+                            symbol-overlay
                             expand-region
-                            ;; exectric-pair-mode builtin
-                            goto-chg
+                            ;; goto-chg
                             ;; hideshow buildin
                             iedit
                             multiple-cursors
@@ -337,6 +350,7 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
   (setq prog-package-used '(treesit-auto
                             ;; eldoc builtin
                             ;; xref builtin
+                            flycheck
                             quickrun
                             editorconfig
                             lsp-mode
@@ -346,18 +360,30 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
                             lsp-pyright
                             cmake-mode
                             thrift-mode
+                            lua-mode
+                            dockerfile-mode
                             consult-lsp))
 
-  (setq org-package-used '(org
-                           org-modern
-                           toc-org))
+  (setq tools-package-used '(esup
+                             persistent-scratch
+                             super-save
+                             keyfreq
+                             keycast
+                             which-key
+                             ;; dired builtin
+                             diredfl
+                             magit
+                             org
+                             org-modern
+                             toc-org
+                             pretty-hydra))
 
   (let ((pkgs (append base-package-used
                       ui-package-used
                       comp-package-used
                       edit-package-used
                       prog-package-used
-                      org-package-used)))
+                      tools-package-used)))
     (dolist (pkg pkgs)
       (straight-use-package pkg)))
 
@@ -370,22 +396,20 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 :HEADER-ARGS: :tangle lisp/init-base.el
 :END:
 :LOGBOOK:
+- Note taken on [2024-01-15 Mon 01:28] \\
+  将esup和magit移动到init-tools.el中
 - Note taken on [2023-12-30 Sat 18:26] \\
   增加no-littering和magit
 :END:
-- *esup* 用来做profile
 - *gcmh* gc黑魔法
 - *exec-path-from-shell* 读取环境变量
 - *pretty-hydra* 简化定义hydra的方式，用于自定义一套快捷绑定
 - *no-littering* 各个mode生成的记录文件统一放到var和etc
-- *magit* git管理 
+
 #+begin_src emacs-lisp
   ;;; init-base.el --- init base package -*- lexical-binding: t -*-
 
   ;;; Code:
-
-  ;; benchmark
-  (use-package esup)
 
   ;; magic gc
   (use-package gcmh
@@ -393,7 +417,7 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
    :hook (emacs-startup . gcmh-mode)
    :init (setq gcmh-idle-delay 'auto
                gcmh-auto-idle-delay-factor 10
-                gcmh-high-cons-threshold #x1000000))
+               gcmh-high-cons-threshold #x1000000))
 
   ;; PATH
   (use-package exec-path-from-shell
@@ -426,35 +450,8 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
   (use-package ibuffer
     :bind ("C-x C-b" . ibuffer))
 
-  ;; tweak file manage
-  (use-package dired
-    :bind (:map dired-mode-map ("M-p" . dired-up-directory))
-    :config
-    (setq dired-dwim-target t
-          dired-recursive-deletes 'always
-          dired-recursive-copy 'always
-          dired-kill-when-opening-new-dired-buffer t))
-    
-  (use-package diredfl
-    :hook (dired-mode . diredfl-mode))
-
   (use-package no-littering
     :demand t)
-
-  (use-package magit)
-
-  (use-package pretty-hydra
-    :bind ("M-SPC" . global-toggle-hydra/body))
-
-  (pretty-hydra-define global-toggle-hydra
-    (:quit-key ("q" "C-g"))
-    ("Buffer"
-     (("[" previous-buffer "previous buffer")
-      ("x" kill-current-buffer "kill buffer" :exit t))
-     "Config"
-     (("cc" priconf/open "open config.rog" :exit t)
-      ("ct" priconf/tangle "tangle config.org" :exit t))))
-
 
   (provide 'init-base)
 
@@ -479,19 +476,25 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 
   (when os/macp
     (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
-    (add-to-list 'default-frame-alist '(ns-appearance . t))
-    (add-to-list 'default-frame-alist '(alpha 90 90)))
-
-  ;; theme
-  ;; (if os/macp (load-theme 'wheatgrass t))
+    (add-to-list 'default-frame-alist '(ns-appearance . t)))
 
   (use-package nerd-icons)
 
+  ;; theme
   (use-package doom-themes
     :init
     (setq doom-themes-enable-bold t
-          doom-themes-enable-italic t)
-    (load-theme 'doom-dark+ t))
+          doom-themes-enable-italic t))
+
+  (setq self/is-default-theme t)
+  (defun self/toggle-theme ()
+    (interactive)
+    (progn
+      (if self/is-default-theme
+          (load-theme 'doom-dark+ t)
+        (load-theme 'doom-solarized-light t))
+      (setq self/is-default-theme (not self/is-default-theme))))
+  (self/toggle-theme)
 
   (use-package doom-modeline
     :hook (after-init . doom-modeline-mode))
@@ -646,7 +649,6 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
            ("C-x b"  . consult-buffer)
            ("M-y" . consult-yank-pop)
            ("M-g g" . consult-goto-line)
-           ("M-g w" . consult-flymake)
            ("M-s l" . consult-line)       
            ("M-s f" . consult-fd)         ;; find file by name
            ("M-s g" . consult-ripgrep)    ;; find file by content
@@ -657,24 +659,13 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
   (use-package consult-yasnippet
     :bind ("M-g y" . consult-yasnippet))
 
-  ;; fix which-key prefix
-  (use-package which-key
-    :hook (after-init . which-key-mode)
-    :init
-    (setq which-key-max-description-length 30
-          which-key-lighter nil
-          which-key-show-remaining-keys t)
-    (which-key-add-key-based-replacements "C-c @" "hideshow")
-    (which-key-add-key-based-replacements "C-c &" "yasnippet")
-    (which-key-add-key-based-replacements "C-x 8" "unicode")
-    (which-key-add-key-based-replacements "C-x 8 e" "emoji")
-    (which-key-add-key-based-replacements "C-x a" "abbrev")
-    (which-key-add-key-based-replacements "C-x n" "narrow")
-    (which-key-add-key-based-replacements "C-x p" "project")
-    (which-key-add-key-based-replacements "C-x r" "rect / bookmark")
-    (which-key-add-key-based-replacements "C-x t" "tab")
-    (which-key-add-key-based-replacements "C-x RET" "coding-system"))
-   
+  (use-package consult-flycheck
+    :bind ("M-g w" . consult-flycheck)
+    :hook (embark-collect-mode . consult-preview-at-point-mode))
+
+  (use-package embark
+    :bind ("C-," . embark-act))
+
   (provide 'init-completion)
 
   ;;; init-completion.el ends here
@@ -690,42 +681,24 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 
   ;;; Code:
 
-  (use-package windmove)
-  (use-package winner-mode
-    :hook (after-init . winner-mode))
+  (use-package subword
+    :hook (prog-mode . subword-mode))
 
-  (use-package ace-window
-    :pretty-hydra
-    ((:title "Window" :quit-key ("q" "C-g"))
-     ("Action"
-      (("x" aw-delete-window "delete" :exit t)
-       ("r" split-window-right "split right" :exit t)
-       ("h" split-window-below "split below" :exit t)
-       ("u" winner-redo "redo" :exit t))
-      "Resize"
-      (("h" shrink-window-horizontally "Shrink -")
-       ("j" enlarge-window "Enlarge |")
-       ("k" shrink-window "Shrink |")
-       ("l" enlarge-window-horizontally "Enlarge -"))))
-    :init (setq aw-dispatch-always nil
-                aw-dispatch-alist '((?x aw-delete-window "Delete window")
-                                    (?s aw-swap-window "Swap window")
-                                    (?n aw-flip-window)
-                                    (?b balance-windows)))
-    :bind (([remap other-window] . ace-window)
-           ("C-c w" . ace-window-hydra/body)))
+  (use-package anzu
+    :diminish
+    :bind (([remap query-replace] . anzu-query-replace)
+           ([remap query-replace-regexp] . anzu-query-replace-regexp))
+    :hook (after-init . global-anzu-mode))
+
+  (use-package diff-hl
+    :hook (after-init . global-diff-hl-mode))
 
   (use-package vundo
     :bind ("C-x u" . vundo)
     :config (setq vundo-glyph-alist vundo-unicode-symbols))
 
-  (use-package avy
-    :bind (("C-'" . avy-goto-char-2))
-    :hook (after-init . avy-setup-default))
-
-  (use-package avy-zap
-    :bind (("M-z" . avy-zap-to-char-dwim)
-           ("M-Z" . avy-zap-up-to-char-dwim)))
+  (use-package electric-pair-mode
+    :hook (prog-mode . electric-pair-mode))
 
   (use-package mwim
     :bind (([remap move-beginning-of-line] . mwim-beginning)
@@ -740,6 +713,10 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
     :hook (after-init . global-hungry-delete-mode)
     :init (setq hungry-delete-chars-to-skip " \t\f\v"
                 hungry-delete-join-reluctantly t))
+
+  (use-package easy-kill
+    :bind (([remap kill-ring-save] . easy-kill)
+           ([remap mark-sexp] . easy-mark)))
 
   (use-package expand-region
     :bind ("C-=" . er/expand-region)
@@ -759,22 +736,16 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
           (goto-char node-start)))
       (add-to-list 'er/try-expand-list 'treesit-mark-bigger-node))
 
-  (use-package electric-pair-mode
-    :hook (prog-mode . electric-pair-mode))
-
-  (use-package goto-chg
-    :bind (("C-," . goto-last-change)))
-
   (use-package hideshow
     :diminish hs-minor-mode
     :hook (prog-mode . hs-minor-mode)
-    :pretty-hydra
-    ((:title "hideshow" :quit-key ("q" "C-g"))
-     ("Fold"
-      (("h" hs-hide-block "hide block")
-       ("s" hs-show-block "show block"))))
     :bind (:map hs-minor-mode-map
-                ("C-~" . hideshow-hydra/body)))
+                (("C-c h h" . hs-hide-block)
+                 ("C-c h s" . hs-show-block))))
+
+  (use-package avy
+    :bind (("C-'" . avy-goto-char))
+    :hook (after-init . avy-setup-default))
 
   (use-package iedit
     :bind (("C-;" . iedit-mode)
@@ -795,7 +766,6 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 
   (provide 'init-editing)
 
-
   ;;; init-editing.el ends here
 #+end_src
 
@@ -815,7 +785,8 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 
   (use-package treesit-auto
     :hook (after-init . global-treesit-auto-mode)
-    :init (setq treesit-auto-install 'prompt))
+    :init (setq treesit-auto-install 'prompt
+                treesit-font-lock-level 4))
 
   (use-package eldoc :diminish)
 
@@ -831,6 +802,9 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
   (use-package editorconfig
     :diminish
     :hook (after-init . editorconfig-mode))
+
+  (use-package flycheck
+    :hook (prog-init . global-flycheck-mode))
 
   ;; (use-package cmake-mode)
 
@@ -868,20 +842,82 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
   (add-hook 'python-mode-hook (lambda () (require 'lsp-pyright) (lsp-deferred)))
   (add-hook 'python-ts-mode-hook (lambda () (require 'lsp-pyright) (lsp-deferred)))
 
+  (use-package lua-mode)
+  (use-package dockerfile-mode)
+
   (provide 'init-prog)
 
   ;;; init-prog.el ends here
 #+end_src
 
-** init-org
+** init-tools
 :PROPERTIES:
-:HEADER-ARGS: :tangle lisp/init-org.el
+:HEADER-ARGS: :tangle lisp/init-tools.el
 :END:
 #+begin_src emacs-lisp
-  ;;; init-org.el --- init org mode -*- lexical-binding: t -*-
+  ;;; init-tools.el --- init tools -*- lexical-binding: t -*-
 
 
   ;;; Code:
+
+  (use-package esup)
+
+  (use-package persistent-scratch
+    :hook (after-init . persistent-scratch-setup-default))
+
+  (use-package super-save
+    :hook (after-init . super-save-mode))
+
+  (use-package keyfreq)
+
+  ;; fix which-key prefix
+  (use-package which-key
+    :hook (after-init . which-key-mode)
+    :init
+    (setq which-key-max-description-length 30
+          which-key-lighter nil
+          which-key-show-remaining-keys t)
+    (which-key-add-key-based-replacements "C-c @" "hideshow")
+    (which-key-add-key-based-replacements "C-c &" "yasnippet")
+    (which-key-add-key-based-replacements "C-x 8" "unicode")
+    (which-key-add-key-based-replacements "C-x 8 e" "emoji")
+    (which-key-add-key-based-replacements "C-x a" "abbrev")
+    (which-key-add-key-based-replacements "C-x n" "narrow")
+    (which-key-add-key-based-replacements "C-x p" "project")
+    (which-key-add-key-based-replacements "C-x r" "rect / bookmark")
+    (which-key-add-key-based-replacements "C-x t" "tab")
+    (which-key-add-key-based-replacements "C-x RET" "coding-system"))
+
+  ;; window
+  (use-package windmove)
+
+  (use-package winner-mode
+    :hook (after-init . winner-mode))
+
+  (use-package ace-window
+    :init (setq aw-dispatch-always nil
+                aw-dispatch-alist '((?x aw-delete-window "Delete window")
+                                    (?s aw-swap-window "Swap window")
+                                    (?n aw-flip-window)
+                                    (?b balance-windows)))
+    :bind ([remap other-window] . ace-window))
+
+  ;; dired
+  (use-package dired
+    :bind (:map dired-mode-map ("M-p" . dired-up-directory))
+    :config
+    (setq dired-dwim-target t
+          dired-recursive-deletes 'always
+          dired-recursive-copy 'always
+          dired-kill-when-opening-new-dired-buffer t))
+
+  (use-package diredfl
+    :hook (dired-mode . diredfl-mode))
+
+  ;; magit
+  (use-package magit)
+
+  ;; org
   (use-package org
     :bind (("C-c a" . org-agenda)
            ("C-c b" . org-switchb)
@@ -894,9 +930,33 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
   (use-package toc-org
     :hook (org-mode . toc-org-mode))
 
+  ;; hydra
+  (use-package hydra)
 
-  (provide 'init-org)
+  (use-package pretty-hydra
+    :bind ("M-SPC" . global-hydra/body))
 
-  ;;; init-org.el ends here
+  (pretty-hydra-define global-hydra
+    (:quit-key ("q" "C-g"))
+    ("Config"
+     (("cc" priconf/open "open config.rog" :exit t)
+      ("ct" priconf/tangle "tangle config.org" :exit t)
+      ("rr" restart-emacs "restart-emacs" :exit t))
+     "Window"
+     (("|" split-window-right "split right" :exit t)
+      ("-" split-window-below "split below" :exit t)
+      ("b" balance-windows "Balance" :exit t)
+      ("h" shrink-window-horizontally "Shrink -")
+      ("j" enlarge-window "Enlarge |")
+      ("k" shrink-window "Shrink |")
+      ("l" enlarge-window-horizontally "Enlarge -")
+      ("u" winner-redo "redo" :exit t))
+     "Appearance"
+     (("[" transparent-sub "transparent sub")
+      ("]" transparent-add "transparent add")
+      ("t" self/toggle-theme "toggle-theme" :exit t))))
+
+  (provide 'init-tools)
+
+  ;;; init-tools.el ends here
 #+end_src
-
