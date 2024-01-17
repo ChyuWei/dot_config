@@ -563,6 +563,14 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
   (setq show-paren-when-point-inside-paren t
         show-paren-when-point-in-periphery t)
 
+  (defun pulse-line (&rest _)
+    "Pulse the current line"
+    (interactive)
+    (pulse-momentary-highlight-one-line))
+
+  (dolist (command '(recenter-top-bottom other-window scroll-down-command scroll-up-command))
+    (advice-add command :after #'pulse-line))
+
   ;; misc
   (setq use-file-dialog nil
         use-dialog-box nil
@@ -642,6 +650,7 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
   (use-package yasnippet
     :diminish
     :hook (after-init . yas-global-mode))
+
   (use-package yasnippet-snippets)
 
   (use-package consult
@@ -866,6 +875,7 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
     :hook (after-init . persistent-scratch-setup-default))
 
   (use-package super-save
+    :diminish
     :hook (after-init . super-save-mode))
 
   (use-package keyfreq)
@@ -901,6 +911,18 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
                                     (?n aw-flip-window)
                                     (?b balance-windows)))
     :bind ([remap other-window] . ace-window))
+
+  (use-package popper :straight t
+    :hook ((after-init . popper-mode)
+           (after-init . popper-echo-mode))
+    :bind (("C-`" . popper-toggle)
+           ("M-`" . popper-cycle)
+           ("C-M-`" . popper-toggle-type))
+    :init (setq popper-reference-buffers
+                '("\\*Message\\*"
+                  "Ouput\\*$"
+                  help-mode
+                  compilation-mode)))
 
   ;; dired
   (use-package dired
