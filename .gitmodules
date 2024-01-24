@@ -2,5 +2,5 @@
 	path = dwm_config/dwm
 	url = https://git.suckless.org/dwm
 [submodule "rime-ice"]
-	path = rime-ice
+	path = rime/rime-ice
 	url = https://github.com/iDvel/rime-ice
