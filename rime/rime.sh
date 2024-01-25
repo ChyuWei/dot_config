@@ -22,19 +22,19 @@ ln -s "../$config_file1" .
 
 
 os_type=$(uname -s)
-linux_rime_base=$HOME/.local/share/fcitx5
-mac_rime_base=$HOME/Library
+linux_config_base=$HOME/.local/share/fcitx5/rime
+mac_config_base=$HOME/Library/Rime
 
 if [[ $os_type == Linux ]]; then
-    if [ -d "$linux_rime_base/rime" ]; then
-        echo "mv $linux_rime_base/rime $linux_rime_base/rime.bak"
-        mv "$linux_rime_base/rime" "$linux_rime_base/rime.bak"
+    if [ -d $linux_config_base ]; then
+        echo "mv $linux_config_base $linux_config_base.bak"
+        mv $linux_config_base "$linux_config_base.bak"
     fi 
-    ln -s $rime_ice "$linux_rime_base/rime"
+    ln -s $rime_ice $linux_config_base
 elif [[ $os_type == Darwin ]]; then
-    if [ -d "$mac_rime_base/Rime" ]; then
-        echo "mv $mac_rime_base/Rime $mac_rime_base/Rime.bak"
-        mv "$mac_rime_base/Rime" "$mac_rime_base/Rime.bak"
+    if [ -d $mac_config_base ]; then
+        echo "mv $mac_config_base $mac_config_base.bak"
+        mv $mac_config_base "$mac_config_base.bak"
     fi
-    ln -s $rime_ice "$mac_rime_base/Rime"
+    ln -s $rime_ice $mac_config_base
 fi
