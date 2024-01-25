@@ -20,10 +20,13 @@ return {
     },
 
     -- font
-    font = wezterm.font({
-        family = "FiraCode Nerd Font",
-        harfbuzz_features = {"calt=1", "clig=1", "liga=0"},
-    }),
+    font = wezterm.font_with_fallback {
+       {
+          family = "FiraCode Nerd Font",
+          harfbuzz_features = {"calt=1", "clig=1", "liga=0"},
+       },
+       "PingFang SC"
+    },
     font_size = 16,
     adjust_window_size_when_changing_font_size = false,
 }
