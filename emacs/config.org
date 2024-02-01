@@ -492,10 +492,11 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 
   (defun self/toggle-theme ()
     (interactive)
-    (progn (if self/is-default-theme
-               (load-theme self/default-theme t)
-             (load-theme self/backup-theme t))
-           (setq self/is-default-theme (not self/is-default-theme))))
+    (when (display-graphic-p)
+      (progn (if self/is-default-theme
+                 (load-theme self/default-theme t)
+               (load-theme self/backup-theme t))
+             (setq self/is-default-theme (not self/is-default-theme)))))
 
   (self/toggle-theme)
 
