@@ -486,14 +486,17 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
     (setq doom-themes-enable-bold t
           doom-themes-enable-italic t))
 
-  (setq self/is-default-theme t)
+  (setq self/default-theme 'doom-solarized-light
+        self/backup-theme 'doom-dark+
+        self/is-default-theme t)
+
   (defun self/toggle-theme ()
     (interactive)
-    (progn
-      (if self/is-default-theme
-          (load-theme 'doom-dark+ t)
-        (load-theme 'doom-solarized-light t))
-      (setq self/is-default-theme (not self/is-default-theme))))
+    (progn (if self/is-default-theme
+               (load-theme self/default-theme t)
+             (load-theme self/backup-theme t))
+           (setq self/is-default-theme (not self/is-default-theme))))
+
   (self/toggle-theme)
 
   (use-package doom-modeline
