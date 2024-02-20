@@ -330,27 +330,12 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
                           ;; doom-themes
                           doom-modeline))
 
-  (setq comp-package-used '(orderless
-                            vertico
-                            marginalia
-                            corfu
-                            corfu-terminal
-                            cape
-                            tempel
-                            tempel-collection
-                            ;; yasnippet
-                            ;; yasnippet-snippets
-                            consult
-                            embark
-                            consult-flycheck
-                            ;; consult-yasnippet
-                            ))
-
   (setq edit-package-used '(anzu
                             diff-hl
                             vundo
                             ;; exectric-pair-mode builtin
                             avy
+                            tiny
                             mwim
                             ;; comment-dwim-2
                             evil-nerd-commenter
@@ -368,7 +353,7 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
   (setq prog-package-used '(treesit-auto
                             ;; eldoc builtin
                             ;; xref builtin
-                            ;; flycheck
+                            flycheck
                             ;; quickrun
                             ;; editorconfig
                             dumb-jump
@@ -398,13 +383,29 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
                              pdf-tools
                              pretty-hydra))
 
+  (setq comp-package-used '(orderless
+                            vertico
+                            marginalia
+                            corfu
+                            corfu-terminal
+                            cape
+                            tempel
+                            tempel-collection
+                            ;; yasnippet
+                            ;; yasnippet-snippets
+                            consult
+                            embark
+                            embark-consult
+                            consult-flycheck
+                            ;; consult-yasnippet
+                            ))
+
   (setq package-used (append base-package-used
                              ui-package-used
                              comp-package-used
                              edit-package-used
                              prog-package-used
                              tools-package-used))
-    
 #+end_src
 
 #+begin_src emacs-lisp
@@ -601,107 +602,6 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 
 #+end_src
 
-** init-completion
-:PROPERTIES:
-:HEADER-ARGS: :tangle lisp/init-completion.el
-:END:
-#+begin_src emacs-lisp
-  ;;; init-completion.el --- init completion -*- lexical-binding: t -*-
-
-
-  ;;; Code:
-  (setq completion-cycle-threshold 3
-        tab-always-indent 'complete)
-
-  (use-package orderless
-    :custom
-    (completion-styles '(orderless basic))
-    (completion-category-override '((file (styles basic partial-completion)))))
-
-  (use-package vertico
-    :bind (:map vertico-map
-                ("RET" . vertico-directory-enter)
-                ("DEL" . vertico-directory-delete-char)
-                ("M-DEL" . vertico-directory-delete-word))
-    :hook ((after-init . vertico-mode)
-           (vertico-mode . vertico-mouse-mode)
-           (rfn-eshadow-update-overlay . vertico-directory-tidy)))
-
-  (use-package marginalia
-    :hook (after-init . marginalia-mode))
-
-  (use-package corfu
-    ;; Optional customizations
-    :custom
-    (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
-    (corfu-auto t)                 ;; Enable auto completion
-    (corfu-auto-delay 0.1)
-    (corfu-auto-prefix 2)
-    (corfu-quit-no-match 'separator)
-    
-    ;; (corfu-separator ?\s)          ;; Orderless field separator
-    ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
-    ;; (corfu-quit-no-match nil)      ;; Never quit, even if there is no match
-    ;; (corfu-preview-current nil)    ;; Disable current candidate preview
-    ;; (corfu-preselect 'prompt)      ;; Preselect the prompt
-    ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
-    ;; (corfu-scroll-margin 5)        ;; Use scroll margin
-
-    ;; Recommended: Enable Corfu globally.
-    ;; This is recommended since Dabbrev can be used globally (M-/).
-    ;; See also `global-corfu-modes'.
-    :hook ((after-init . global-corfu-mode)))
-
-  (unless (display-graphic-p)
-    (use-package corfu-terminal
-      :init (corfu-terminal-mode +1)))
-
-  (use-package tempel
-    ;; :custom (tempel-trigger-prefix "<")  
-    :init
-    (defun tempel-setup-capf ()
-      (setq-local completion-at-point-functions
-                  (cons #'tempel-expand
-                        completion-at-point-functions)))
-    (add-hook 'conf-mode-hook 'tempel-setup-capf)
-    (add-hook 'prog-mode-hook 'tempel-setup-capf)
-    (add-hook 'text-mode-hook 'tempel-setup-capf))
-
-  (use-package tempel-collection)
-
-  (use-package cape
-    :init
-    (add-to-list 'completion-at-point-functions #'cape-file)
-    (add-to-list 'completion-at-point-functions #'cape-elisp-block)
-    (add-to-list 'completion-at-point-functions #'cape-keyword)
-    (add-to-list 'completion-at-point-functions #'cape-abbrev)
-    (add-to-list 'completion-at-point-functions #'cape-dabbrev))
-
-  (use-package consult
-    :bind (("C-c M-x" . consult-mode-command)
-           ("C-x b"  . consult-buffer)
-           ("M-y" . consult-yank-pop)
-           ("M-g g" . consult-goto-line)
-           ("M-g w" . consult-flymake)
-           ("M-s l" . consult-line)       
-           ("M-s f" . consult-fd)         ;; find file by name
-           ("M-s g" . consult-ripgrep)    ;; find file by content
-           ;; ([remap recentf-open-files] . consult-recent-file)
-           ([remap imenu] . consult-imenu)))
-
-  (use-package embark
-    :bind (("C-." . embark-act)
-           ("M-." . embark-dwim)
-           ("C-h B" . embark-bindings)))
-
-  (use-package embark-consult
-    :hook (embark-collect-mode . consult-preview-at-point-mode))
-
-  (provide 'init-completion)
-
-  ;;; init-completion.el ends here
-#+end_src
-
 ** init-editing
 :PROPERTIES:
 :HEADER-ARGS: :tangle lisp/init-editing.el
@@ -729,6 +629,10 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 
   (use-package electric-pair-mode
     :hook (prog-mode . electric-pair-mode))
+
+  ;; (setq electric-pair-inhibit-predicate
+  ;;       (lambda (c)
+  ;;         (if (char-equal c ?\<) t (electric-pair-default-inhibit c))))
 
   (use-package mwim
     :bind (([remap move-beginning-of-line] . mwim-beginning)
@@ -784,6 +688,8 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
     :bind (("C-;" . iedit-mode)
            :map isearch-mode-map ("C-;" . iedit-mode-from-isearch)
            :map esc-map ("C-;" . iedit-execute-last-modification)))
+
+  (use-package tiny)
 
   (use-package multiple-cursors
     :init (setq mc/always-run-for-all t)
@@ -1036,5 +942,108 @@ emacs29有两个基础的启动文件~early-init.el~和~init.el~
 
   (provide 'init-tools)
 
+#+end_src
+
+** init-completion
+:PROPERTIES:
+:HEADER-ARGS: :tangle lisp/init-completion.el
+:END:
+#+begin_src emacs-lisp
+  ;;; init-completion.el --- init completion -*- lexical-binding: t -*-
+
+
+  ;;; Code:
+  (setq completion-cycle-threshold 3
+        tab-always-indent 'complete)
+
+  (use-package orderless
+    :custom
+    (completion-styles '(orderless basic))
+    (completion-category-override '((file (styles basic partial-completion)))))
+
+  (use-package vertico
+    :bind (:map vertico-map
+                ("RET" . vertico-directory-enter)
+                ("DEL" . vertico-directory-delete-char)
+                ("M-DEL" . vertico-directory-delete-word))
+    :hook ((after-init . vertico-mode)
+           (vertico-mode . vertico-mouse-mode)
+           (rfn-eshadow-update-overlay . vertico-directory-tidy)))
+
+  (use-package marginalia
+    :hook (after-init . marginalia-mode))
+
+  (use-package corfu
+    ;; Optional customizations
+    :custom
+    (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
+    (corfu-auto t)                 ;; Enable auto completion
+    (corfu-auto-delay 0.1)
+    (corfu-auto-prefix 2)
+    (corfu-quit-no-match 'separator)
+    ;; (corfu-separator ?\s)          ;; Orderless field separator
+    ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
+    ;; (corfu-quit-no-match nil)      ;; Never quit, even if there is no match
+    ;; (corfu-preview-current nil)    ;; Disable current candidate preview
+    ;; (corfu-preselect 'prompt)      ;; Preselect the prompt
+    ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
+    ;; (corfu-scroll-margin 5)        ;; Use scroll margin
+
+    ;; Recommended: Enable Corfu globally.
+    ;; This is recommended since Dabbrev can be used globally (M-/).
+    ;; See also `global-corfu-modes'.
+    :hook ((after-init . global-corfu-mode)))
+
+  (unless (display-graphic-p)
+    (use-package corfu-terminal
+      :init (corfu-terminal-mode +1)))
+
+  (use-package tempel
+    ;; :custom (tempel-trigger-prefix "<")
+    :init
+    (defun tempel-setup-capf ()
+      (setq-local completion-at-point-functions
+                  (cons #'tempel-expand
+                        completion-at-point-functions)))
+    (add-hook 'conf-mode-hook 'tempel-setup-capf)
+    (add-hook 'prog-mode-hook 'tempel-setup-capf)
+    (add-hook 'text-mode-hook 'tempel-setup-capf))
+
+  (use-package tempel-collection)
+
+  (use-package cape
+    :init
+    (add-to-list 'completion-at-point-functions #'cape-file)
+    (add-to-list 'completion-at-point-functions #'cape-elisp-block)
+    (add-to-list 'completion-at-point-functions #'cape-keyword)
+    (add-to-list 'completion-at-point-functions #'cape-abbrev)
+    (add-to-list 'completion-at-point-functions #'cape-dabbrev))
+
+  (use-package consult
+    :bind (("C-c M-x" . consult-mode-command)
+           ("C-x b"  . consult-buffer)
+           ("M-y" . consult-yank-pop)
+           ("M-g g" . consult-goto-line)
+           ;; ("M-g w" . consult-flymake)
+           ("M-s l" . consult-line)
+           ("M-s f" . consult-fd)         ;; find file by name
+           ("M-s g" . consult-ripgrep)    ;; find file by content
+           ;; ([remap recentf-open-files] . consult-recent-file)
+           ([remap imenu] . consult-imenu)))
+
+  (use-package consult-flycheck
+    :bind ("M-g w" . consult-flycheck))
+
+  (use-package embark
+    :bind (("C-." . embark-act)
+           ("M-." . embark-dwim)
+           ("C-h B" . embark-bindings)))
+
+  (use-package embark-consult
+    :hook (embark-collect-mode . consult-preview-at-point-mode))
+
+  (provide 'init-completion)
+
+  ;;; init-completion.el ends here
 #+end_src
 
