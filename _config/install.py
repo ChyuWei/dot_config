@@ -23,4 +23,5 @@ def install(app):
 
 if __name__ == '__main__':
     install('ghostty')
+    install('tmux')
 
