@@ -13,5 +13,4 @@ patch:
     font_face: "PingFangSC"                 # 候选词字体
     font_point: 16                          # 候选字词大小
     label_font_point: 14
-    alpah: 0.8
     translucency: true

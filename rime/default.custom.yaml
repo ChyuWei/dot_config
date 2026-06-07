@@ -1,5 +1,6 @@
 patch:
-  menu/page_size: 9
+  menu/page_size: 6
 
-  schema_list:
-  - schema: double_pinyin          # 自然码双拼
+  key_binder/bindings:
+    - { when: paging, accept: bracketleft, send: Page_Up }
+    - { when: paging, accept: bracketright, send: Page_Down }

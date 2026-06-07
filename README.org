@@ -1,30 +1,36 @@
-#+TITLE: Readme
+#+TITLE: dot_config
 
-* 常用软件配置
+* 输入法
 
-** wm相关
+[[file:rime/][Rime 万象拼音]] — macOS Squirrel 鼠须管配置。
 
-- 窗口管理器 [[file:config/i3/config][i3-gaps]]
-- 状态条 [[file:config/i3status-rust/config.toml][i3status-rust]]
-- 通知管理器 [[file:config/dunst/][dunst]]
-- 混成器 [[file:config/picom/][picom]]
-- 锁屏 [[file:config/betterlockscreenrc][betterlockscreen]]
+安装：
 
-<2023-12-31 Sun>改用hyprland
-- sddm
-- hyprland [[file:config/hypr/hyprland.conf][hyprland.conf]]
-- mako
-- waybar
-- wofi
-- nm-applet
-- blueman-applet
-- alacritty
-- nekoray
+#+begin_src bash
+cd rime && python3 rime.py install
+#+end_src
 
-** 工具
-- thunar 文件管理器
-- Parcellite 剪切板管理器
-- atril pdf阅读器
-- emacs [[file:emacs/config.org][emacs配置]]
+日常改配后部署：
 
+#+begin_src bash
+cd rime && python3 rime.py config
+#+end_src
 
+| 文件 | 说明 |
+|------+------|
+| [[file:rime/squirrel.custom.yaml][squirrel.custom.yaml]] | 鼠须管外观（主题、字体、字号、圆角） |
+| [[file:rime/default.custom.yaml][default.custom.yaml]] | 候选数 & 翻页键 |
+| [[file:rime/rime.py][rime.py]] | 一键安装 / 更新 / 软链部署脚本 |
+
+* 终端 & 工具
+
+| 配置 | 说明 |
+|------+------|
+| [[file:_config/ghostty/config][ghostty]] | 终端模拟器 |
+| [[file:_config/tmux/tmux.conf][tmux]] | 终端复用器 |
+
+* 安装
+
+#+begin_src bash
+python3 _config/install.py
+#+end_src
