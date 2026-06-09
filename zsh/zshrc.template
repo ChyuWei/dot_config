@@ -1,0 +1,27 @@
+# =============================================================================
+# ~/.zshrc — user zsh configuration (private, not version-controlled)
+# Copy from ~/.config/zsh/zshrc.template
+# =============================================================================
+
+# ---- Feature library ----
+source ~/.config/zsh/zshrc.lib
+
+# ---- Shell ----
+export PATH="$HOME/.local/bin:$PATH"
+
+# ---- Proxy ----
+proxy_factory 10808
+
+# ---- Rust ----
+export NO_PROXY="localhost,127.0.0.1,rsproxy.cn"
+export RUSTUP_DIST_SERVER="https://rsproxy.cn"
+export RUSTUP_UPDATE_ROOT="https://rsproxy.cn/rustup"
+
+# ---- zoxide (smart cd) ----
+eval "$(zoxide init zsh)"
+
+# ---- Your own stuff below ----
+# fnm:
+#   eval "$(fnm env --use-on-cd --shell zsh)"
+# Google Cloud:
+#   export GOOGLE_CLOUD_PROJECT_ID="your-project-id"

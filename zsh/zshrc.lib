@@ -1,0 +1,189 @@
+# =============================================================================
+# zshrc.lib — zsh feature library
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# History
+# ---------------------------------------------------------------------------
+HISTSIZE=50000
+SAVEHIST=50000
+HISTFILE=~/.zsh_history
+
+setopt APPEND_HISTORY          # append to history file (don't overwrite)
+setopt INC_APPEND_HISTORY      # write to file immediately, not at shell exit
+setopt SHARE_HISTORY           # share history across concurrent shells
+setopt HIST_IGNORE_DUPS        # don't store duplicate adjacent commands
+setopt HIST_IGNORE_ALL_DUPS    # delete old duplicate when a new one is added
+setopt HIST_IGNORE_SPACE       # don't store commands starting with space
+setopt HIST_REDUCE_BLANKS      # remove superfluous blanks
+setopt HIST_VERIFY             # show expanded command before running (!! etc.)
+setopt EXTENDED_HISTORY        # record timestamp + duration in history file
+
+# ---------------------------------------------------------------------------
+# History substring search
+# Type a partial command, press ↑ to find previous commands with same prefix.
+# Empty line → normal history browsing.
+# ---------------------------------------------------------------------------
+autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+
+# Bind to Up / Down arrows (multiple escape sequences for terminal compatibility)
+bindkey "^[[A"  up-line-or-beginning-search
+bindkey "^[[B"  down-line-or-beginning-search
+bindkey "^[OA"  up-line-or-beginning-search
+bindkey "^[OB"  down-line-or-beginning-search
+
+# ---------------------------------------------------------------------------
+# Completion
+# ---------------------------------------------------------------------------
+zstyle ':completion:*' menu select          # highlight and select from menu
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z} l:|=* r:|=*' 'm:{a-z}={A-Za-z}'
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"  # colorized completions
+zstyle ':completion:*' rehash true          # rehash commands on completion
+
+autoload -Uz compinit
+compinit
+
+# ---------------------------------------------------------------------------
+# Prompt — simple, robbyrussell-inspired
+#   ➜ ~/dir git:(main) ●    (green arrow = last command ok, red = failed)
+# ---------------------------------------------------------------------------
+autoload -Uz vcs_info
+zstyle ':vcs_info:git:*' formats       ' %F{yellow}git:(%F{red}%b%F{yellow})%f'
+zstyle ':vcs_info:git:*' actionformats ' %F{yellow}git:(%F{red}%b|%a%F{yellow})%f'
+
+# -- async git dirty check (background job + SIGUSR1) --
+GIT_DIRTY=""
+
+_git_dirty_start() {
+    git rev-parse --git-dir >/dev/null 2>&1 || return
+    (git -C "$PWD" status --porcelain 2>/dev/null > "/tmp/_gd.$$" && kill -USR1 $$ 2>/dev/null) &!
+}
+
+TRAPUSR1() {
+    if [[ -f "/tmp/_gd.$$" ]]; then
+        local staged=0 unstaged=0
+        grep -q "^[MADRC]" "/tmp/_gd.$$" 2>/dev/null && staged=1
+        grep -q "^.[MAD?]" "/tmp/_gd.$$" 2>/dev/null && unstaged=1
+        local s=""
+        [[ $staged   -gt 0 ]] && s="${s}+"
+        [[ $unstaged -gt 0 ]] && s="${s}*"
+        GIT_DIRTY=$([[ -n "$s" ]] && echo " $s" || echo "")
+    fi
+    zle reset-prompt
+}
+
+precmd() { vcs_info; _git_dirty_start }
+setopt PROMPT_SUBST
+
+# Path truncation: if path >= 4 dirs deep, show .../last2
+PROMPT='%(?:%F{green}➜%f:%F{red}➜%f) %F{cyan}%(4~|.../%2~|%~)%f${vcs_info_msg_0_}${GIT_DIRTY} '
+
+# ---------------------------------------------------------------------------
+# Basic shell options
+# ---------------------------------------------------------------------------
+setopt AUTO_CD              # cd by typing directory name
+setopt AUTO_PUSHD           # pushd on cd, popd on cd -
+setopt PUSHD_IGNORE_DUPS    # no duplicate dirs in stack
+setopt CORRECT              # correct minor spelling errors in commands
+setopt NO_BEEP              # no beep on errors
+setopt NO_LIST_BEEP         # no beep on ambiguous completions
+setopt INTERACTIVE_COMMENTS # allow comments in interactive shell
+setopt CHASE_LINKS          # resolve symlinks
+
+# ---------------------------------------------------------------------------
+# Key bindings
+# ---------------------------------------------------------------------------
+bindkey "^[[H"  beginning-of-line   # Home
+bindkey "^[[F"  end-of-line         # End
+bindkey "^[[3~" delete-char         # Delete
+bindkey "^?"    backward-delete-char # Backspace
+
+# Ctrl+Left / Ctrl+Right to move by words
+bindkey "^[[1;5C" forward-word
+bindkey "^[[1;5D" backward-word
+
+# ---------------------------------------------------------------------------
+# Aliases
+# ---------------------------------------------------------------------------
+
+# --- General ---
+# ls colors (macOS BSD ls)
+export LSCOLORS="Gxfxcxdxbxegedabagacad"
+alias ls='ls -G'
+alias l='ls -lhG'
+alias la='ls -lhAG'
+alias ll='ls -lhG'
+alias lsa='ls -lhAG'
+alias lt='ls -lhtG'           # sort by time, newest first
+alias lr='ls -lhRG'           # recursive
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias md='mkdir -p'
+alias rd='rmdir'
+alias df='df -h'
+alias du='du -h'
+alias free='top -l 1 | grep PhysMem'
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+
+# --- Misc ---
+alias ip='curl -s https://ipinfo.io | jq'  # requires jq
+alias week='date +%V'
+alias path='echo $PATH | tr ":" "\n"'
+alias reload='exec zsh'
+
+# ---------------------------------------------------------------------------
+# proxy_factory — generates proxy() / unproxy() for a given port
+# Usage in ~/.zshrc:  proxy_factory 10808
+# ---------------------------------------------------------------------------
+proxy_factory() {
+    local port=${1:-10808}
+    eval "proxy() {
+        export http_proxy=http://127.0.0.1:$port
+        export https_proxy=http://127.0.0.1:$port
+        export all_proxy=socks5://127.0.0.1:$port
+        export HTTP_PROXY=http://127.0.0.1:$port
+        export HTTPS_PROXY=http://127.0.0.1:$port
+        export ALL_PROXY=socks5://127.0.0.1:$port
+        echo \"proxy on :$port\"
+    }"
+    eval "unproxy() {
+        unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY
+        echo 'proxy off'
+    }"
+}
+
+# ---------------------------------------------------------------------------
+# extract — smart archive extraction, auto-detects format
+# Usage: extract <file>
+# ---------------------------------------------------------------------------
+extract() {
+    if [ -f "$1" ]; then
+        case "$1" in
+            *.tar.bz2) tar xvjf "$1"    ;;
+            *.tar.gz)  tar xvzf "$1"    ;;
+            *.tar.xz)  tar xvJf "$1"    ;;
+            *.tar.zst) tar --zstd -xvf "$1" ;;
+            *.bz2)     bunzip2 "$1"     ;;
+            *.gz)      gunzip "$1"      ;;
+            *.tar)     tar xvf "$1"     ;;
+            *.tbz2)    tar xvjf "$1"    ;;
+            *.tgz)     tar xvzf "$1"    ;;
+            *.zip)     unzip "$1"       ;;
+            *.7z)      7z x "$1"         ;;
+            *.rar)     unrar x "$1"     ;;
+            *.Z)       uncompress "$1"  ;;
+            *.xz)      unxz "$1"        ;;
+            *.zst)     unzstd "$1"      ;;
+            *) echo "extract: unknown format '$1'" ;;
+        esac
+    elif [ -d "$1" ]; then
+        echo "extract: '$1' is a directory"
+    else
+        echo "extract: '$1' not found"
+    fi
+}
