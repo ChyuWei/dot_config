@@ -57,11 +57,13 @@ zstyle ':vcs_info:git:*' actionformats ' %F{yellow}git:(%F{red}%b|%a%F{yellow})%
 GIT_DIRTY=""
 
 _git_dirty_start() {
+    GIT_DIRTY=""
     git rev-parse --git-dir >/dev/null 2>&1 || return
     (git -C "$PWD" status --porcelain 2>/dev/null > "/tmp/_gd.$$" && kill -USR1 $$ 2>/dev/null) &!
 }
 
 TRAPUSR1() {
+    git rev-parse --git-dir >/dev/null 2>&1 || { zle reset-prompt; return; }
     if [[ -f "/tmp/_gd.$$" ]]; then
         local staged=0 unstaged=0
         grep -q "^[MADRC]" "/tmp/_gd.$$" 2>/dev/null && staged=1
