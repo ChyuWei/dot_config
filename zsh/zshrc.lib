@@ -47,40 +47,17 @@ compinit
 
 # ---------------------------------------------------------------------------
 # Prompt — simple, robbyrussell-inspired
-#   ➜ ~/dir git:(main) ●    (green arrow = last command ok, red = failed)
+#   ➜ ~/dir git:(main)    (green arrow = last command ok, red = failed)
 # ---------------------------------------------------------------------------
 autoload -Uz vcs_info
 zstyle ':vcs_info:git:*' formats       ' %F{yellow}git:(%F{red}%b%F{yellow})%f'
 zstyle ':vcs_info:git:*' actionformats ' %F{yellow}git:(%F{red}%b|%a%F{yellow})%f'
 
-# -- async git dirty check (background job + SIGUSR1) --
-GIT_DIRTY=""
-
-_git_dirty_start() {
-    GIT_DIRTY=""
-    git rev-parse --git-dir >/dev/null 2>&1 || return
-    (git -C "$PWD" status --porcelain 2>/dev/null > "/tmp/_gd.$$" && kill -USR1 $$ 2>/dev/null) &!
-}
-
-TRAPUSR1() {
-    git rev-parse --git-dir >/dev/null 2>&1 || { zle reset-prompt; return; }
-    if [[ -f "/tmp/_gd.$$" ]]; then
-        local staged=0 unstaged=0
-        grep -q "^[MADRC]" "/tmp/_gd.$$" 2>/dev/null && staged=1
-        grep -q "^.[MAD?]" "/tmp/_gd.$$" 2>/dev/null && unstaged=1
-        local s=""
-        [[ $staged   -gt 0 ]] && s="${s}+"
-        [[ $unstaged -gt 0 ]] && s="${s}*"
-        GIT_DIRTY=$([[ -n "$s" ]] && echo " $s" || echo "")
-    fi
-    zle reset-prompt
-}
-
-precmd() { vcs_info; _git_dirty_start }
+precmd() { vcs_info }
 setopt PROMPT_SUBST
 
 # Path truncation: if path >= 4 dirs deep, show .../last2
-PROMPT='%(?:%F{green}➜%f:%F{red}➜%f) %F{cyan}%(4~|.../%2~|%~)%f${vcs_info_msg_0_}${GIT_DIRTY} '
+PROMPT='%(?:%F{green}➜%f:%F{red}➜%f) %F{cyan}%(4~|.../%2~|%~)%f${vcs_info_msg_0_} '
 
 # ---------------------------------------------------------------------------
 # Basic shell options
