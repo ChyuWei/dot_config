@@ -1,0 +1,17 @@
+# macOS metadata
+.DS_Store
+._*
+
+# Editor backup, auto-save and swap files
+*~
+\#*\#
+.\#*
+*.swp
+*.swo
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Machine-local agent permissions
+/.claude/settings.local.json

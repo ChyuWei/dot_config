@@ -29,6 +29,10 @@ cd rime && python3 rime.py config
 | [[file:_config/ghostty/config][ghostty]] | 终端模拟器 |
 | [[file:_config/tmux/tmux.conf][tmux]] | 终端复用器 |
 
+* Emacs
+
+[[file:emacs/][Emacs 31 配置]] — 以 Markdown / Org 阅读与写作为主，包含补全、主题与 macOS 字体设置。
+
 * 安装
 
 #+begin_src bash

@@ -1,0 +1,26 @@
+# Emacs 运行时生成的文件，不进入版本库
+/elpa/
+/eln-cache/
+/etc/
+/var/
+/auto-save-list/
+/bookmarks
+/custom.el
+/history
+/places
+/recentf
+/transient/
+/url/
+/tree-sitter/
+/.cache/
+.DS_Store
+
+# Locally compiled configuration; source remains authoritative.
+*.elc
+*.eln
+*.eln.tmp
+
+# Default cache/socket locations, if used without no-littering.
+/package-quickstart.el
+/package-quickstart.elc
+/server/
