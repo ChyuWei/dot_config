@@ -1,6 +1,6 @@
 #!/bin/sh
 # Build the tree-sitter grammars `markdown-ts-mode' needs into
-# ~/.emacs.d/tree-sitter: markdown, markdown-inline (one repo, two
+# var/treesit/ beside this script: markdown, markdown-inline (one repo, two
 # src dirs) and python (for highlighting fenced python code).
 #
 # Emacs 31's built-in installer fails on the two-language markdown
@@ -9,7 +9,8 @@
 # would do for a single-language repository.
 set -e
 
-TS="${HOME}/.emacs.d/tree-sitter"
+CONFIG_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+TS="$CONFIG_DIR/var/treesit"
 mkdir -p "$TS"
 
 build () {

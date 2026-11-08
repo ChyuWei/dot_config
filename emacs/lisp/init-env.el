@@ -1,39 +1,243 @@
-;;; init-env.el --- Shell environment after UI setup -*- lexical-binding: t; -*-
+;;; init-env.el --- Shell PATH after UI setup, cached -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
-;; Keep shell initialization out of early-init and the initial UI path.
-;; window-setup-hook also runs for daemon startup, before serving clients.
+;; The shell's PATH is what makes Eglot, ripgrep, fd, typst and friends
+;; work, but spawning a login+interactive shell costs ~250 ms on this machine.
+;; The result is therefore cached in var/exec-path.el together with:
+;;
+;;   - the mtime of every shell startup file (.zshenv/.zprofile/.zshrc,
+;;     .profile, .bash_profile; $ZDOTDIR is honoured),
+;;   - the value of $SHELL.
+;;
+;; On startup the cache is loaded (a fraction of a millisecond) and compared
+;; against those values; any difference, a missing cache, or a cache written
+;; by an older version of this file means the shell is asked again.  So
+;; editing .zshrc, installing a tool in a new directory via a shell change, or
+;; switching $SHELL invalidates it automatically, and `my/env-refresh' forces
+;; it (M-x my/env-refresh).
+;;
+;; The import runs from `my/window-ready-hook' at depth 20, i.e. after
+;; init-ui's display setup at depth 10: the slow path calls `redisplay' before
+;; touching the shell, so the frame must already have its theme and fonts.
+;; Tool-specific fixups live with their tool: ~/go/bin and the Eglot retry are
+;; in init-eglot.el, which runs at depth 30 (after PATH is in place).
+;;
+;; The proxy commands at the end of the file are unrelated to the cache: they
+;; only touch `process-environment' and `url-proxy-services' for the current
+;; session, and nothing about them is written to disk.
 
 ;;; Code:
+
+(defcustom my/env-cache-file
+  (expand-file-name "var/exec-path.el" user-emacs-directory)
+  "Where the imported shell environment is cached.
+Delete it (or run `my/env-refresh') to import again."
+  :type 'file
+  :group 'environment)
+
+(defconst my/env-cache-version 2
+  "Format version of `my/env-cache-file'.
+Bump it when the cached contents change shape; older caches are then
+ignored and rebuilt.")
+
+(defvar my/env-cache-file-version nil
+  "Version recorded inside the cache file.  Set by loading it.")
+(defvar my/env-cache-shell-times nil
+  "Alist of (FILE . SECONDS) recorded in the cache file.")
+(defvar my/env-cache-shell nil
+  "Value of $SHELL recorded in the cache file.")
+
+(defun my/env-shell-files ()
+  "Shell startup files whose modification invalidates the cache.
+Honours $ZDOTDIR for the zsh files, like zsh itself does."
+  (let ((zdotdir (or (getenv "ZDOTDIR") "~")))
+    (mapcar #'expand-file-name
+            (list (expand-file-name ".zshenv" zdotdir)
+                  (expand-file-name ".zprofile" zdotdir)
+                  (expand-file-name ".zshrc" zdotdir)
+                  "~/.profile" "~/.bash_profile"))))
+
+(defun my/env--file-modification-time (file)
+  "Return the modification time of FILE, or nil when it does not exist."
+  (ignore-errors
+    (file-attribute-modification-time (file-attributes file))))
+
+(defun my/env--shell-file-modification-times ()
+  "Return an alist of (FILE . SECONDS) for the shell files that exist."
+  (let (file-modification-times)
+    (dolist (file (my/env-shell-files))
+      (when-let* ((modification-time (my/env--file-modification-time file)))
+        (push (cons file (time-to-seconds modification-time))
+              file-modification-times)))
+    (nreverse file-modification-times)))
+
+(defun my/env--load-valid-cache ()
+  "Load the cached environment when it is still valid.
+The cache records the mtime of every shell startup file and the value of
+$SHELL at the time it was written; any difference means it is stale.
+Return non-nil when the cache was used."
+  (when (file-exists-p my/env-cache-file)
+    (setq my/env-cache-file-version nil
+          my/env-cache-shell-times nil
+          my/env-cache-shell nil)
+    (condition-case err
+        (load my/env-cache-file :noerror :nomessage)
+      (error
+       (message "Ignoring unreadable PATH cache %s: %s"
+                my/env-cache-file (error-message-string err))
+       nil))
+    ;; Each rejection returns nil explicitly: `message' returns its string.
+    (cond
+     ((not (equal my/env-cache-file-version my/env-cache-version))
+      (message "PATH cache written by another version; re-importing")
+      nil)
+     ((not (equal my/env-cache-shell (getenv "SHELL")))
+      (message "Shell changed since the PATH cache was written; re-importing")
+      nil)
+     ((not (equal my/env-cache-shell-times (my/env--shell-file-modification-times)))
+      (message "Shell startup file changed; re-importing PATH")
+      nil)
+     (t t))))
+
+(defun my/env--write-cache ()
+  "Write `exec-path' and PATH to `my/env-cache-file'."
+  (make-directory (file-name-directory my/env-cache-file) t)
+  (with-temp-file my/env-cache-file
+    (insert ";;; -*- lexical-binding: t; -*-\n"
+            ";; Generated by `my/env-refresh'; delete the file to import again.\n")
+    (let ((print-length nil) (print-level nil))
+      (dolist (form `((setq my/env-cache-file-version ',my/env-cache-version)
+                      (setq my/env-cache-shell-times ',(my/env--shell-file-modification-times))
+                      (setq my/env-cache-shell ,(getenv "SHELL"))
+                      (setq exec-path ',exec-path)
+                      (setenv "PATH" ,(getenv "PATH"))))
+        (prin1 form (current-buffer))
+        (insert "\n")))))
+
+(defun my/env-refresh ()
+  "Ask the shell for PATH, apply it and rewrite the cache.
+Interactive: use this after changing a shell startup file or installing a
+tool in a new directory."
+  (interactive)
+  (require 'exec-path-from-shell)
+  (let ((imported (condition-case err
+                      (progn (exec-path-from-shell-initialize) t)
+                    (error
+                     (message "Shell PATH import failed: %s"
+                              (error-message-string err))
+                     nil))))
+    (when imported
+      (my/env--write-cache))
+    imported))
+
+(defun my/init-env-activate ()
+  "Apply the shell PATH, from the cache when it is still good.
+Runs from `my/window-ready-hook'.  A cache hit costs nothing; a miss spawns
+the shell (~250 ms), so the frame is redisplayed first."
+  (unless (my/env--load-valid-cache)
+    (redisplay)
+    (my/env-refresh)))
 
 (use-package exec-path-from-shell
   :ensure t
   :commands exec-path-from-shell-initialize
   :custom
   (exec-path-from-shell-variables '("PATH"))
-  (exec-path-from-shell-arguments '("-l" "-i"))
-  :init
-  (add-hook 'window-setup-hook
-            (lambda ()
-              (redisplay)
-              (condition-case err
-                  (exec-path-from-shell-initialize)
-                (error (message "Shell PATH import failed: %s"
-                                (error-message-string err))))
-              ;; The shell currently lacks Go's user bin directory.
-              (let ((go-bin (expand-file-name "~/go/bin")))
-                (when (and (file-directory-p go-bin) (not (member go-bin exec-path)))
-                  (setq exec-path (append exec-path (list go-bin)))
-                  (setenv "PATH" (concat (or (getenv "PATH") "") path-separator go-bin))))
-              ;; Command-line files may have opened before the shell PATH
-              ;; became available.  Retry their installed-server check.
-              (when (fboundp 'my/eglot-ensure)
-                (dolist (buffer (buffer-list))
-                  (with-current-buffer buffer
-                    (when (and (bound-and-true-p my/eglot-missing-server)
-                               buffer-file-name (derived-mode-p 'prog-mode))
-                      (my/eglot-ensure))))))))
+  (exec-path-from-shell-arguments '("-l" "-i")))
+
+;; Depth 20: after init-ui's display setup, which registers at depth 10 and
+;; must run before the `redisplay' below.
+(add-hook 'my/window-ready-hook #'my/init-env-activate 20)
+
+;;; Proxy -------------------------------------------------------------------
+
+;; Temporary and per-session: nothing is written to disk.  Two independent
+;; knobs, because the consumers differ and neither reads the other's setting:
+;;
+;;   environment variables  -> processes Emacs starts (git clone of a grammar,
+;;                             ripgrep, a language server, curl...)
+;;   `url-proxy-services'   -> HTTP(S) Emacs itself performs (package.el,
+;;                             `url-retrieve', anything built on url.el)
+
+(defcustom my/proxy-url "http://127.0.0.1:10808"
+  "Proxy URL used by `my/proxy-enable'."
+  :type 'string
+  :group 'environment)
+
+(defconst my/proxy-env-vars '("http_proxy" "https_proxy" "HTTP_PROXY" "HTTPS_PROXY")
+  "Environment variables `my/proxy-enable' sets and `my/proxy-disable' removes.
+Both spellings are set because they differ by tool: git and curl read the
+lower-case names, while macOS tooling and shell exports are usually
+upper-case.  One pair would leave half of them pointing the other way.")
+
+(defvar my/proxy--saved nil
+  "Alist of (NAME . VALUE) captured by `my/proxy-enable'.
+A nil VALUE means the variable was not set before, so `my/proxy-disable'
+removes it again instead of restoring anything.  Being non-nil is also what
+tells `my/proxy-disable' that this session's proxy is ours to undo, and that
+`my/proxy--saved-url-proxy' holds a snapshot worth restoring.")
+
+(defvar my/proxy--saved-url-proxy nil
+  "Value of `url-proxy-services' before `my/proxy-enable' changed it.")
+
+(defun my/proxy--url-proxy-services (url)
+  "Return `url-proxy-services' entries for both schemes pointing at URL.
+URL may omit the scheme; the format `url.el' wants is HOST:PORT without one."
+  (require 'url-parse)
+  (let* ((parsed (url-generic-parse-url
+                  (if (string-match-p "\\`[a-zA-Z][a-zA-Z0-9+.-]*://" url)
+                      url
+                    (concat "http://" url))))
+         (host (url-host parsed))
+         (proxy (and host (format "%s:%s" host (or (url-port parsed) 80)))))
+    (unless proxy (user-error "Cannot find a proxy host in %s" url))
+    `(("http" . ,proxy) ("https" . ,proxy))))
+
+(defun my/proxy-enable (&optional url)
+  "Send Emacs' network traffic and subprocesses through a proxy.
+Set `my/proxy-env-vars' to URL (default `my/proxy-url') and
+`url-proxy-services' to the same host, remembering both old values so
+`my/proxy-disable' can put them back.  The variables reach processes started
+afterwards (git clones, language servers); `url-proxy-services' covers HTTP
+that Emacs performs itself (package.el).  Neither is written to disk, so the
+next Emacs start is direct again."
+  (interactive (list (read-string "Proxy URL: " my/proxy-url)))
+  (let ((services (my/proxy--url-proxy-services url)))
+    ;; Keep the first snapshot: calling this twice must not record the proxy
+    ;; itself as the value to restore.
+    (unless my/proxy--saved
+      (setq my/proxy--saved
+            (mapcar (lambda (name) (cons name (getenv name))) my/proxy-env-vars))
+      (setq my/proxy--saved-url-proxy url-proxy-services))
+    (dolist (name my/proxy-env-vars)
+      (setenv name url))
+    (setq url-proxy-services services)
+    (message "代理已开启：%s（%s + url-proxy-services）" url
+             (mapconcat #'identity my/proxy-env-vars " "))
+    url))
+
+(defun my/proxy-disable ()
+  "Turn the proxy off for this session.
+When `my/proxy-enable' ran, the variables and `url-proxy-services' get their
+old values back (the ones that were unset are removed again).  With no proxy
+enabled, they are simply cleared, which is what \"off\" has to mean for a
+proxy that came from the shell."
+  (interactive)
+  (cond
+   (my/proxy--saved
+    (dolist (name my/proxy-env-vars)
+      (setenv name (cdr (assoc name my/proxy--saved))))
+    (setq url-proxy-services my/proxy--saved-url-proxy)
+    (setq my/proxy--saved nil
+          my/proxy--saved-url-proxy nil)
+    (message "代理已关闭，环境变量与 url-proxy-services 已还原"))
+   (t
+    (dolist (name my/proxy-env-vars)
+      (setenv name nil))
+    (setq url-proxy-services nil)
+    (message "代理已关闭，%s 与 url-proxy-services 已清空"
+             (mapconcat #'identity my/proxy-env-vars " ")))))
 
 (provide 'init-env)
 

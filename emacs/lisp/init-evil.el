@@ -1,16 +1,16 @@
-;;; init-evil.el --- Modal editing with Evil -*- lexical-binding: t; -*-
+;;; init-evil.el --- Evil and its companions -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
-;; Vim-style modal editing for every buffer.  The leader key is SPC: it
-;; is bound in normal, visual, motion and operator states, and the
-;; bindings themselves live in init-keys.el next to the other personal
-;; keys.  evil-collection gives Dired, help, ibuffer, grep, compile and
-;; xref their usual Vim-like keys as well.
+;; Evil is only *declared* here: whether it is enabled depends on the
+;; keybinding profile (see init-profile.el).  With the `emacs' profile Evil
+;; is never loaded, so none of these packages cost anything at startup.
+;; The Vim-specific keys live in init-keys-vim.el, the leader in
+;; init-leader.el.
 
 ;;; Code:
 
-;;; Modal editing ---------------------------------------------------------
+;;; Part 1: Evil itself ----------------------------------------------------
 
 ;; Evil 1.15.0 reads `evil-initializing-p''s `evil-mode-buffers' in
 ;; `evil-normal-post-command' (post-command hook) but never gives the
@@ -22,18 +22,19 @@
 
 (use-package evil
   :ensure t
+  :defer t
   :init
   ;; These variables must be set before Evil is loaded.
   (setq evil-want-integration t
         ;; evil-collection manages the auxiliary mode keymaps itself.
         evil-want-keybinding nil
-        ;; C-u scrolls like Vim; C-i stays TAB so Org/Markdown folding
-        ;; and indentation work normally.
-        evil-want-C-u-scroll t
+        ;; C-u keeps its Emacs meaning (universal-argument), like C-x its
+        ;; prefix; C-i stays TAB so Org/Markdown folding and indentation
+        ;; work normally.
+        evil-want-C-u-scroll nil
         evil-want-C-i-jump nil
-        evil-want-Y-yank-to-eol t)
-  (when (fboundp 'evil-mode)
-    (evil-mode 1))
+        ;; Vim's own Y (yank the whole line); keep the stock meaning.
+        evil-want-Y-yank-to-eol nil)
   :config
   (setq evil-undo-system 'undo-redo
         evil-split-window-below t
@@ -64,46 +65,39 @@
   :config
   (evil-collection-init))
 
-;;; Jumping and text objects ---------------------------------------------
+;;; Part 2: companions -----------------------------------------------------
 
-;; SPC j j — flash-jump to any visible character by typing a few of them;
-;; SPC j l — jump to a visible line.  Leader bindings live in init-keys.el.
-(use-package avy
-  :ensure t
-  :init
-  (setq avy-all-windows nil
-        avy-case-fold-search t))
-
-;; Change and delete surroundings like Vim's surround plugin: ysiw(,
-;; cs", ds( ...  It works on text objects in every buffer.
+;; Declared only: `my/evil-companion-modes' enables them (one second after
+;; startup, or immediately when switching profiles at run time).
 (use-package evil-surround
   :ensure t
-  :init (global-evil-surround-mode 1))
+  :defer t)
 
-;; % jumps between pairs of fences, tags and blocks (Markdown code
-;; fences, HTML tags, org environments, parentheses...).
-;; Loads one second after startup goes idle: the global mode is only
-;; needed once you actually press %, and loading it also drags in
-;; sh-script/semantic, which nothing else wants at launch.
 (use-package evil-matchit
   :ensure t
-  :defer t
-  :init
-  (run-with-idle-timer 1 nil #'global-evil-matchit-mode 1))
+  :defer t)
 
-;; Multiple cursors load after one idle second, like evil-matchit.
-;; Normal-state gr performs reference lookup; use M-x evil-mc-… for
-;; cursor commands.  C-n/C-p/M-n/M-p retain the package's cursor navigation.
 (use-package evil-mc
   :ensure t
-  :defer t
-  :init
-  (run-with-idle-timer 1 nil #'global-evil-mc-mode 1))
+  :defer t)
+
+(defun my/evil-companion-modes (arg)
+  "Enable or disable the Evil companion global modes by ARG.
+Surround changes and deletes surroundings, matchit extends %, and mc
+provides multiple cursors; all three are autoloaded, so this also loads
+them on demand."
+  (interactive "p")
+  (dolist (mode '(global-evil-surround-mode
+                  global-evil-matchit-mode
+                  global-evil-mc-mode))
+    (when (fboundp mode)
+      (funcall mode arg))))
+
+;;; Part 3: packages that also serve the `emacs' profile --------------------
 
 ;; A brief flash on the target line after a jump (imenu, consult jumps,
-;; xref), so you can see where you landed.  No flash when the jump
-;; stays on screen.  The flash command loads on the first jump; the
-;; hooks must be registered before that.
+;; xref), so you can see where you landed.  The flash command loads on the
+;; first jump; the hooks must be registered before that.
 (use-package nav-flash
   :ensure t
   :defer t
@@ -111,32 +105,36 @@
   (dolist (hook '(consult-after-jump-hook xref-after-jump-hook))
     (add-hook hook #'nav-flash-show)))
 
-;; Vim's C-a (and C-x): numbers at point.  C-u -1 C-a decrements; 5 C-a
-;; adds 5.
-(use-package evil-numbers
+;; SPC j j — flash-jump to any visible character by typing a few of them;
+;; SPC j l — jump to a visible line.  Leader bindings live in init-leader.el.
+(use-package avy
   :ensure t
-  :config
-  (dolist (map (list evil-normal-state-map evil-visual-state-map))
-    (define-key map (kbd "C-a") #'evil-numbers/inc-at-pt)))
+  :defer t
+  :custom
+  (avy-all-windows nil)
+  (avy-case-fold-search t))
 
 ;; Unified folding for Org, Markdown and any outline-ish buffer (the
-;; package picks the right backend itself): Vim's usual z keys work the
-;; same everywhere.
+;; package picks the right backend itself).  The z keys are part of the
+;; `vim' profile (init-keys-vim.el); in the `emacs' profile outline's own
+;; TAB/S-TAB do the job, and this global mode still serves both.
 (use-package kirigami
   :ensure t
+  :defer t
   :custom
   (kirigami-show-menu-bar nil)
-  (kirigami-show-context-menu nil)
-  :init
-  (kirigami-global-mode 1)
-  :config
-  (dolist (binding '(("zo" . kirigami-open-fold)
-                     ("zO" . kirigami-open-fold-rec)
-                     ("zc" . kirigami-close-fold)
-                     ("za" . kirigami-toggle-fold)
-                     ("zr" . kirigami-open-folds)
-                     ("zm" . kirigami-close-folds)))
-    (define-key evil-normal-state-map (car binding) (cdr binding))))
+  (kirigami-show-context-menu nil))
+
+;;; Part 4: activation -----------------------------------------------------
+
+(defun my/init-evil-activate ()
+  "Enable the folding global mode.
+Runs from `my/window-ready-hook' at depth 40, before any key is processed;
+the z keys themselves are autoloaded, so nothing else waits for this."
+  (require 'kirigami)
+  (kirigami-global-mode 1))
+
+(add-hook 'my/window-ready-hook #'my/init-evil-activate 40)
 
 (provide 'init-evil)
 

@@ -30,4 +30,24 @@
 (cl-assert (= (alist-get 'height default-frame-alist) 40))
 (cl-assert (not tool-bar-mode))
 (cl-assert (not scroll-bar-mode))
-(princ "PASS: no early shell execution, GC lifecycle and frame defaults\n")
+
+;; `load' asks `my/load-path-filter' where to look first; the directory that
+;; served a file last time must come up front, with the rest kept as fallback.
+(cl-assert (eq load-path-filter-function #'my/load-path-filter))
+(cl-assert (memq 'my/load-path--remember after-load-functions))
+(let ((path '("/a/" "/b/" "/c/")))
+  (cl-assert (equal path (my/load-path-filter path "nothing-known" '(".elc" ".el"))))
+  (cl-assert (equal path (my/load-path-filter path "known" '(".elc" ".el")))))
+(puthash "my-known-lib.elc" "/c/" my/load-path--directories)
+(cl-assert (equal '("/c/" "/a/" "/b/")
+                  (my/load-path-filter '("/a/" "/b/" "/c/") "my-known-lib" '(".elc" ".el"))))
+;; A remembered directory that is no longer on `load-path' must be ignored.
+(puthash "my-gone-lib.el" "/nowhere/" my/load-path--directories)
+(cl-assert (equal '("/a/" "/b/")
+                  (my/load-path-filter '("/a/" "/b/") "my-gone-lib" '(".elc" ".el"))))
+;; `after-load-functions' records where a file came from.
+(my/load-path--remember "/tmp/somewhere/thing.el")
+(cl-assert (equal "/tmp/somewhere/" (gethash "thing.el" my/load-path--directories)))
+(my/load-path--remember nil)            ; must not signal
+
+(princ "PASS: no early shell execution, GC lifecycle, frame defaults and load-path filter\n")

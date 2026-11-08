@@ -83,6 +83,30 @@
         (expand-file-name "custom.el" user-emacs-directory)))
 (load custom-file :noerror)
 
+;;; Autoremove safety ------------------------------------------------------
+
+;; `package-autoremove' trusts `package-selected-packages', which Custom keeps
+;; in etc/custom.el and only updates for packages installed or deleted
+;; interactively.  Everything installed here through `use-package ... :ensure'
+;; looks unselected, so autoremove would offer to delete most of the tree.
+;; Instead of maintaining a second list by hand, derive it from what is
+;; actually installed, at the moment autoremove runs: no startup cost, nothing
+;; to keep in sync.  The price is that the command can no longer find
+;; anything to remove -- every installed package counts as selected, leftovers
+;; included -- so cleaning up an unused package means deleting its directory
+;; from elpa/ by hand.  That is the safe direction: the failure mode of the
+;; opposite is a deleted package the configuration still needs.
+(defun my/package-select-installed ()
+  "Mark every installed package as selected, so nothing can be autoremoved.
+Runs before `package-autoremove', which then has nothing to offer: the
+configuration never risks losing a package it still uses.  Remove an unused
+package by deleting its directory from `package-user-dir' instead."
+  (require 'package)
+  (package-load-all-descriptors)
+  (setq package-selected-packages (mapcar #'car package-alist)))
+
+(advice-add 'package-autoremove :before #'my/package-select-installed)
+
 (provide 'init-packages)
 
 ;;; init-packages.el ends here

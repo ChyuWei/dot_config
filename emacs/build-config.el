@@ -8,14 +8,21 @@
 (require 'bytecomp)
 (require 'doom-modeline)                 ; macros used in init-ui.el
 
-;; Normally use-package removes :ensure from compiled output.  Keep runtime
-;; installation checks so a missing package still installs as in source mode.
+;; Normally use-package removes :ensure from compiled output, and handles
+;; :vc at compile time only.  Keep both install paths at runtime so a
+;; missing package still installs as in source mode (README: the compiled
+;; version keeps the runtime check for missing packages).
 (let ((runtime-ensure
        (lambda (_original name _keyword ensure rest state)
          (cons `(funcall use-package-ensure-function ',name
                          ',(and (not (plist-member rest :vc)) ensure) ',state)
+               (use-package-process-keywords name rest state))))
+      (runtime-vc
+       (lambda (_original name _keyword arg rest state)
+         (cons `(use-package-vc-install ',arg nil)
                (use-package-process-keywords name rest state)))))
   (advice-add 'use-package-handler/:ensure :around runtime-ensure)
+  (advice-add 'use-package-handler/:vc :around runtime-vc)
   (unwind-protect
       (progn
         ;; early-init stays source-only: it sets load-prefer-newer before
@@ -27,4 +34,5 @@
             (error "Compilation failed: %s" file)))
         (package-quickstart-refresh)
         (princ "Built configuration bytecode and package activation cache\n"))
-    (advice-remove 'use-package-handler/:ensure runtime-ensure)))
+    (advice-remove 'use-package-handler/:ensure runtime-ensure)
+    (advice-remove 'use-package-handler/:vc runtime-vc)))
