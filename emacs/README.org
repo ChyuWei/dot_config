@@ -106,8 +106,8 @@
 
 ** 挂载清单（按实际执行顺序）
 
-=my/before-init-hook=、=my/startup-hook=、=my/first-file-hook= 目前是空的
-（=before-init= 甚至没有接线，原因见上）。实际有内容的是下面三个：
+=my/before-init-hook= 和 =my/first-file-hook= 目前是空的（=before-init=
+甚至没有接线，原因见上）。实际有内容的是下面四个：
 *** =my/after-init-hook=（原生 =after-init-hook=）
 
 | # | 函数 | 来自 | depth | 做什么 |
@@ -116,14 +116,25 @@
 | 2 | =my/init-defaults-activate-display= | init-defaults | 10 | 开全局行号 |
 | 3 | =my/init-defaults-activate-treesit= | init-defaults | 20 | =setopt treesit-enabled-modes=，写静态 =major-mode-remap-alist= |
 | 4 | =my/init-defaults-activate-files= | init-defaults | 30 | =recentf= + =save-place=，读盘、恢复上次光标位置 |
-| 5 | =my/init-defaults-activate-editing= | init-defaults | 40 | =delete-selection= / =pixel-scroll= / =repeat= / =show-paren= / =blink-cursor= |
-| 6 | =my/init-defaults-activate-formatting= | init-defaults | 50 | 开 =apheleia-global-mode=（保存时异步格式化） |
+| 5 | =my/init-defaults-activate-scratch= | init-defaults | 35 | 恢复 =*scratch*=（=persistent-scratch=），开自动保存 |
+| 6 | =my/init-defaults-activate-editing= | init-defaults | 40 | =delete-selection= / =pixel-scroll= / =repeat= / =show-paren= / =blink-cursor= |
+| 7 | =my/init-defaults-activate-formatting= | init-defaults | 50 | 开 =apheleia-global-mode=（保存时异步格式化） |
 
 之所以必须在这个 hook：命令行给的文件在 =after-init-hook= **之后**才打开。
 由此推出三条硬约束：行号与 tree-sitter 映射必须已生效（2、3）；
 文件必须能被记录进 recentf、并恢复上次的光标位置（4——=save-place-mode=
 只是往 =find-file-hook= 里加一个函数，晚开就再也补不回来，实测早开能回到第
-3 行、晚开只能停在第一行）；第一下按键依赖的行为要已就位（5）。
+3 行、晚开只能停在第一行）；第一下按键依赖的行为要已就位（6）。
+
+*** =my/startup-hook=（原生 =emacs-startup-hook=）
+
+| # | 函数 | 来自 | 做什么 |
+|---+------+------+--------|
+| 1 | =my/init-defaults-activate-scratch-mode= | init-defaults | 在 =*scratch*= 里开 =persistent-scratch-mode= |
+
+=*scratch*= 的 major mode 在 daemon 等启动路径上是在 =after-init-hook= 之后才
+设定的，而换 major mode 会清掉 buffer 局部的 minor mode，所以这个开关放在
+startup；scratch 的内容恢复仍在 =after-init-hook=（第 5 项）。
 
 *** =my/window-ready-hook=（原生 =window-setup-hook=）
 
@@ -172,7 +183,7 @@
 #+begin_example
 加载期（init.el）   只做设置和定义，第三方包 0 个
   ↓
-after-init         行号、ts 模式重映射、recentf+save-place、编辑手感、格式化、doom-modeline
+after-init         行号、ts 模式重映射、recentf+save-place、scratch、编辑手感、格式化、doom-modeline
   ↓
 window-ready       键位方案(Evil+leader) → 主题字体 → PATH → Eglot 收尾
                    → kirigami → 补全栈        ← 首帧绘制发生在这里

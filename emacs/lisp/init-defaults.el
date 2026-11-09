@@ -352,6 +352,16 @@ Detected with Dirvish's public `dirvish-curr' plus the built-in
   :custom
   (separedit-default-mode 'markdown-mode))
 
+;;; Persistent scratch
+
+;; `*scratch*' is where throwaway notes and REPL snippets go; keep its text,
+;; point and major mode across restarts.  The state file lives under var/ with
+;; the rest of the runtime data, and `persistent-scratch-mode' makes `C-x C-s'
+;; save it instead of asking for a file name.
+(use-package persistent-scratch
+  :ensure t
+  :defer t)
+
 ;;; Part 3: activation -----------------------------------------------------
 
 (defun my/init-defaults-activate-files ()
@@ -371,6 +381,36 @@ only records files visited after it is on."
   (let ((inhibit-message t))
     (recentf-mode 1))
   (save-place-mode 1))
+
+(defun my/init-defaults-activate-scratch ()
+  "Restore `*scratch*' and start autosaving it.
+Runs from `my/after-init-hook': the buffer exists by then and the user cannot
+have typed into it yet.  Batch sessions are skipped: autosave would overwrite
+the user's scratch state when a test exits."
+  (unless noninteractive
+    (require 'persistent-scratch)
+    (let ((file (no-littering-expand-var-file-name "persistent-scratch")))
+      (setq persistent-scratch-save-file file)
+      ;; The package reports a missing state file as a failed restore; `nil'
+      ;; is a valid empty state, so create one on the first run.
+      (unless (file-exists-p file)
+        (with-temp-file file (insert "nil\n"))
+        (set-file-modes file #o600))
+      ;; Restoring the saved major mode runs `prog-mode-hook' (the default
+      ;; `lisp-interaction-mode' derives from prog-mode), which would load
+      ;; indent-bars during startup.  The scratch buffer needs its mode, not
+      ;; the programming setup.
+      (let ((prog-mode-hook nil))
+        (persistent-scratch-setup-default)))))
+
+(defun my/init-defaults-activate-scratch-mode ()
+  "Enable `persistent-scratch-mode' in `*scratch*' after startup.
+The buffer's major mode is set after `after-init-hook' on some startup paths
+(the daemon), and changing the major mode resets buffer-local minor modes."
+  (when (and (bound-and-true-p persistent-scratch-autosave-mode)
+             (get-buffer "*scratch*"))
+    (with-current-buffer "*scratch*"
+      (persistent-scratch-mode 1))))
 
 (defun my/init-defaults-activate-session ()
   "Enable the modes that only need to exist before the user interacts.
@@ -431,6 +471,8 @@ Emacs Lisp buffer when asked."
 (add-hook 'my/after-init-hook #'my/init-defaults-activate-display 10)
 (add-hook 'my/after-init-hook #'my/init-defaults-activate-treesit 20)
 (add-hook 'my/after-init-hook #'my/init-defaults-activate-files 30)
+(add-hook 'my/after-init-hook #'my/init-defaults-activate-scratch 35)
+(add-hook 'my/startup-hook #'my/init-defaults-activate-scratch-mode)
 (add-hook 'my/after-init-hook #'my/init-defaults-activate-editing 40)
 (add-hook 'my/after-init-hook #'my/init-defaults-activate-formatting 50)
 
