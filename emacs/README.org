@@ -910,4 +910,7 @@ Eglot 是 Emacs 内置的 LSP 客户端。打开本地代码文件时，使用 E
   新增 =use-package= 时避免只写 =:custom=
   却不带 =:defer t=,否则该包会拖整包进入启动。
 - 运行时生成的文件由 =no-littering= 放到 =etc/= 与 =var/=,已在
-  [[file:.gitignore][.gitignore]] 中忽略。
+  [[file:.gitignore][.gitignore]] 中忽略。备份（=file~=）与自动保存
+  （=#file#=）也由 =no-littering-theme-backups= 重定向到 =var/backup/=
+  和 =var/auto-save/=，不再写在每个被编辑文件旁边；临时目录（=/tmp=、
+  =/dev/shm= 等）里的文件例外，仍就近保存。

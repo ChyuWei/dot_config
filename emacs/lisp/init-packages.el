@@ -75,7 +75,11 @@
 ;; Keep backups, history and other generated state under etc/ and var/.
 (use-package no-littering
   :ensure t
-  :demand t)
+  :demand t
+  :config
+  ;; Backups (file~) and auto-saves (#file#) go under var/ as well;
+  ;; files in temporary directories keep their copies beside them.
+  (no-littering-theme-backups))
 
 (setq custom-file
       (if (fboundp 'no-littering-expand-etc-file-name)
