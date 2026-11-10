@@ -25,15 +25,16 @@
 
 ;; Global keymap, not Evil's state maps: on macOS Cmd is a modifier that no one
 ;; else claims, and it has to work in insert state as well.
-(dolist (entry '(("s-s" . save-buffer)
-                 ("s-c" . kill-ring-save)
-                 ("s-v" . clipboard-yank)
-                 ("s-x" . kill-region)
-                 ("s-a" . mark-whole-buffer)
-                 ("s-z" . undo)
-                 ("s-Z" . undo-redo)
-                 ("s-f" . isearch-forward)))
-  (keymap-global-set (car entry) (cdr entry)))
+(when (eq system-type 'darwin)
+  (dolist (entry '(("s-s" . save-buffer)
+                   ("s-c" . kill-ring-save)
+                   ("s-v" . clipboard-yank)
+                   ("s-x" . kill-region)
+                   ("s-a" . mark-whole-buffer)
+                   ("s-z" . undo)
+                   ("s-Z" . undo-redo)
+                   ("s-f" . isearch-forward)))
+    (keymap-global-set (car entry) (cdr entry))))
 
 ;; Applying the profile (which loads Evil in the vim profile) is an
 ;; activation step, not a declaration: `init-profile' registers it on

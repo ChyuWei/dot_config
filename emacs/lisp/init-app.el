@@ -11,6 +11,7 @@
 ;;
 ;;   dsh-emacs  client for a locally running DeepSeek Harness agent server.
 ;;   magit      Git status, staging, log and blame.
+;;   appine     native macOS views (WebKit, PDFKit, Quick Look) in Emacs.
 
 ;;; Code:
 
@@ -85,6 +86,22 @@ native profile must not load Evil merely because a dsh buffer opened."
   (when (eq my/keybinding-profile 'vim)
     (evil-collection-require 'magit)
     (evil-collection-magit-setup)))
+
+;;; Appine
+
+;; Appine embeds native macOS views (WebKit, PDFKit, Quick Look) inside Emacs
+;; through a dynamic module: PDFs scroll like Preview, and the same window
+;; opens web pages and Office previews.  macOS-only and Emacs 29.1+ with
+;; module support; the native dylib (~700 KB) is fetched on first use.
+(use-package appine
+  :if (eq system-type 'darwin)
+  :vc (:url "https://github.com/chaoswork/appine" :rev :newest)
+  :no-require t
+  :defer t
+  :custom
+  ;; Keep Org's normal link handling; `M-x appine-toggle-use-for-org-links'
+  ;; switches Org links over to Appine.
+  (appine-use-for-org-links nil))
 
 (provide 'init-app)
 

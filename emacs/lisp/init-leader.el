@@ -113,6 +113,13 @@
     ("m ." embark-act "对当前对象执行操作"))
   "Leader bindings as (KEY COMMAND LABEL); nil LABEL hides the entry.")
 
+(defconst my/leader-macos-bindings
+  (when (eq system-type 'darwin)
+    '(("A a" appine "Appine（浏览器 / PDF）")
+      ("A u" appine-open-url "用 Appine 打开 URL")
+      ("A o" appine-open-file "用 Appine 打开文件")))
+  "Leader bindings for macOS-only applications.")
+
 (defconst my/leader-groups
   '(("b" . "+缓冲区")
     ("f" . "+文件 / 项目")
@@ -146,7 +153,7 @@
                 ("m" my/leader-markdown-map)
                 (_ (make-sparse-keymap)))))
 
-(dolist (binding my/leader-bindings)
+(dolist (binding (append my/leader-bindings my/leader-macos-bindings))
   (define-key my/leader-map (kbd (car binding)) (cadr binding)))
 
 ;; Most built-in commands already have autoloads.  Add only the missing
@@ -223,7 +230,7 @@ list is empty there."
       (push (cons prefix "快捷菜单") specs)
       (dolist (group my/leader-groups)
         (push (cons (concat prefix " " (car group)) (cdr group)) specs))
-      (dolist (entry my/leader-bindings)
+      (dolist (entry (append my/leader-bindings my/leader-macos-bindings))
         (push (cons (concat prefix " " (car entry)) (nth 2 entry)) specs))
       (nreverse specs))))
 

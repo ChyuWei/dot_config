@@ -219,6 +219,7 @@ like one line.  That is what `hs-adjust-block-end-function' -- new in Emacs
 ;; `:vc' (no tags, so `:newest'); the native module lives in modules/
 ;; (ignored) and loaded on idle, not during startup.
 (use-package emt
+  :if (eq system-type 'darwin)
   :vc (:url "https://github.com/ChyuWei/emt" :rev :newest)
   :defer t)
 
@@ -480,12 +481,13 @@ Emacs Lisp buffer when asked."
 (defun my/init-defaults-activate-cjk ()
   "Enable `emt-mode' when its native module exists.
 Skip rather than prompt when `emt-lib-path' is missing; fetch it once with
-`M-x emt-download-module'."
-  (require 'emt)
-  (if (file-exists-p emt-lib-path)
-      (emt-mode 1)
-    (message "emt module missing at %s; run M-x emt-download-module"
-             emt-lib-path)))
+`M-x emt-download-module'.  emt uses macOS NLP, so it is skipped elsewhere."
+  (when (eq system-type 'darwin)
+    (require 'emt)
+    (if (file-exists-p emt-lib-path)
+        (emt-mode 1)
+      (message "emt module missing at %s; run M-x emt-download-module"
+               emt-lib-path))))
 
 (add-hook 'my/after-init-hook #'my/init-defaults-activate-display 10)
 (add-hook 'my/after-init-hook #'my/init-defaults-activate-treesit 20)

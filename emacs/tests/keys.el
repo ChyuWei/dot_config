@@ -33,7 +33,7 @@
 (unless (eq my/keybinding-profile 'vim)
   (error "The default profile should be vim, got %S" my/keybinding-profile))
 
-(dolist (entry my/leader-bindings)
+(dolist (entry (append my/leader-bindings my/leader-macos-bindings))
   (let* ((key (car entry))
          (command (cadr entry))
          (label (nth 2 entry))
@@ -58,7 +58,7 @@
     (evil-local-mode 1)
     (dolist (state '(normal visual motion operator))
       (evil-change-state state)
-      (dolist (entry my/leader-bindings)
+      (dolist (entry (append my/leader-bindings my/leader-macos-bindings))
         (unless (eq (key-binding (kbd (concat "SPC " (car entry))) nil t)
                     (cadr entry))
           (error "Shadowed binding in %S/%S: %S" mode state entry))))))

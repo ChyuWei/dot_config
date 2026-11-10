@@ -3,19 +3,22 @@
 
 * 要求
 
-- Emacs 31.1 或更高版本（使用内置 =use-package=、原生编译、NS 外观回调等）
-- macOS（字体和 =ns-system-appearance= 相关设置针对 macOS；其他平台删掉即可）
-- 首次启动需要联网，从国内镜像安装第三方包
-- 外部工具（=brew install=）：=ripgrep=（内容搜索，=M-?= / =C-x p g=）、
-  =fd=（文件名搜索，=SPC f F= / =SPC f d=）、
-  =coreutils=（提供 GNU =gls=，=dirvish-fd= 需要）、
-  =zoxide=（=SPC f z= 的目录数据库）、
-  =rustfmt= / =gofmt=（保存时格式化，随 rust/go 工具链）、
-  =typst=（Org 导出 PDF，可选）
-- 只给 =SPC A d=（DeepSeek Harness）用、不装也不影响编辑器的：
-  =bun add -g @deepseek-ai/dsh=（服务端），见「应用」一节
+- Emacs 31.1 或更高版本（带 module support）
+- 首次启动需要联网
 
-=~/.emacs.d= 是指向本目录（=dot_config/emacs=）的符号链接。
+* 外部依赖
+
+- ripgrep
+- fd
+- coreutils（=gls=）
+- zoxide
+- rustfmt / gofmt（可选）
+- git
+- JetBrains Mono、LXGW WenKai
+- typst（可选）
+- graphviz / plantuml（可选）
+- =@deepseek-ai/dsh=（可选）
+- Appine 动态模块（可选，macOS）
 
 * 包源
 
@@ -27,104 +30,67 @@
 | NonGNU ELPA | =https://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/= |
 | MELPA | =https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/= |
 
-在 [[file:lisp/init-packages.el][init-packages.el]] 中把 =my/elpa-mirror= 改成 ="ustc"=
-即可切换到中科大镜像。切换镜像后如果索引仍是旧的，执行
-=M-x package-refresh-contents=，或删除 =~/.emacs.d/elpa/archives/= 后重启。
+在 [[file:lisp/init-packages.el][init-packages.el]] 中把 =my/elpa-mirror= 改成 ="ustc"= 即可切换到中科大镜像。
 
 * 结构
 
 | 文件 | 作用 |
 |------+------|
 | [[file:early-init.el][early-init.el]] | 启动早期设置：GC、frame、关闭工具栏（不运行 shell） |
-| [[file:init-hooks.el][init-hooks.el]] | 自定义启动 hook 的定义、与 Emacs 原始钩子的映射与顺序；=M-x my/reload-config= 重载配置 |
+| [[file:init-hooks.el][init-hooks.el]] | 启动 hook 的定义、映射与顺序 |
 | [[file:init.el][init.el]] | 入口，按顺序加载各模块 |
 | [[file:lisp/init-packages.el][init-packages.el]] | 包源、=use-package=、=no-littering= |
-| [[file:lisp/init-env.el][init-env.el]] | 导入 shell PATH（带缓存，见「Eglot」一节）；临时开关代理 |
-| [[file:lisp/init-defaults.el][init-defaults.el]] | 编辑、文件、会话、滚动、鼠标、搜索后端、ts 模式、保存时格式化 |
-| [[file:lisp/init-ui.el][init-ui.el]] | 主题（内置 =modus-operandi=）、字体、doom-modeline、frame |
+| [[file:lisp/init-env.el][init-env.el]] | 导入 shell PATH（带缓存）、临时代理开关 |
+| [[file:lisp/init-defaults.el][init-defaults.el]] | 编辑、文件、会话、滚动、鼠标、搜索、ts 模式、保存时格式化 |
+| [[file:lisp/init-ui.el][init-ui.el]] | 主题、字体、doom-modeline、frame |
 | [[file:lisp/init-profile.el][init-profile.el]] | 键位方案（=vim= / =emacs=）与切换 |
-| [[file:lisp/init-leader.el][init-leader.el]] | 功能键表、leader 键、which-key 标签 |
-| [[file:lisp/init-keys-vim.el][init-keys-vim.el]] | 只属于 Vim 方案的按键 |
-| [[file:lisp/init-keys-emacs.el][init-keys-emacs.el]] | 只属于 Emacs 方案的按键 |
-| [[file:lisp/init-evil.el][init-evil.el]] | Evil 及其同伴（只在 vim 方案启用） |
-| [[file:lisp/init-completion.el][init-completion.el]] | Vertico / Consult / Embark / Corfu / Tempel / zoxide 跳目录 |
-| [[file:lisp/init-eglot.el][init-eglot.el]] | 已安装的语言服务器、补全、诊断与跳转 |
+| [[file:lisp/init-leader.el][init-leader.el]] | leader 键、which-key 标签 |
+| [[file:lisp/init-keys-vim.el][init-keys-vim.el]] | Vim 方案按键 |
+| [[file:lisp/init-keys-emacs.el][init-keys-emacs.el]] | Emacs 方案按键 |
+| [[file:lisp/init-evil.el][init-evil.el]] | Evil 及相关包（只在 vim 方案启用） |
+| [[file:lisp/init-completion.el][init-completion.el]] | Vertico / Consult / Embark / Corfu / Tempel / zoxide |
+| [[file:lisp/init-eglot.el][init-eglot.el]] | Eglot、语言服务器、诊断与跳转 |
 | [[file:lisp/init-markdown.el][init-markdown.el]] | Markdown 阅读与编辑 |
-| [[file:lisp/init-org.el][init-org.el]] | Org 阅读、捕获、议程 |
+| [[file:lisp/init-org.el][init-org.el]] | Org 阅读、捕获、议程、导出 |
 | [[file:lisp/init-outline.el][init-outline.el]] | header-line 标题路径、大纲侧栏 |
-| [[file:lisp/init-keys.el][init-keys.el]] | 装配上面四个文件、macOS Cmd 键 |
-| [[file:lisp/init-app.el][init-app.el]] | 基于 Emacs Lisp 的应用（=dsh-emacs=），按需 =:vc= 安装 |
-
-命令实现与对应功能放在一起：Markdown 显示开关和脚注在 =init-markdown.el=，
-标题跳转在 =init-outline.el=，文件/项目/buffer 操作、fd 搜索、保存时格式化在
-=init-defaults.el=，代理开关在 =init-env.el=，重载配置在 =init-hooks.el=。
-=init-leader.el= 只负责绑定这些命令、安装 leader 和维护 which-key 标签。
-移动命令不增加 =require=；包仍在原来的 hook 或首次调用时加载。
-应用（=init-app.el=）是例外：它们不是编辑功能，按需 =:vc= 安装。
+| [[file:lisp/init-keys.el][init-keys.el]] | 键位配置文件装配、macOS Cmd 键 |
+| [[file:lisp/init-app.el][init-app.el]] | dsh-emacs、Magit、Appine |
 
 * 首次启动
 
-直接运行 =emacs=。第三方包会安装到 =~/.emacs.d/elpa/=，该目录及
-=eln-cache/=、=etc/=、=var/= 都已加入 =.gitignore=。
-
-如果包索引下载失败，先执行 =M-x package-refresh-contents=，或求值：
-
-#+begin_src emacs-lisp
-(package-refresh-contents)
-#+end_src
-
-然后重启 Emacs。网络恢复后再次启动也会自动安装缺失的包。
+直接运行 =emacs=。第三方包安装到 =~/.emacs.d/elpa/=；索引下载失败时执行
+=M-x package-refresh-contents= 后重启。
 
 * 启动挂载点（自定义 hook）
 
-[[file:init-hooks.el][init-hooks.el]] 把 Emacs 的启动钩子包成一层具名的 normal hook：
-6 个变量，每个最多跑一次，一一对应到原生钩子。配置把"加载包 / 开模式"
-这类动作挂在这些 hook 上（清单见下），模块顶层只留设置和定义。
-
-它由 [[file:init.el][init.el]] 顶部加载。本来为了接 =before-init-hook= 需要从
-=early-init.el= 加载，但那个 hook 现在**定义着、不接线**（原因见下），
-其余五个都在 =init.el= 之后才触发，所以从 init.el 加载就够。
-文件本身只定义变量和转发函数，不 =require= 任何包。
+[[file:init-hooks.el][init-hooks.el]] 把 Emacs 的启动钩子包成具名的 normal hook；配置把加载包、开模式这类动作挂在这些 hook 上。
 
 ** 映射表
 
 | 我们的 hook | Emacs 原始触发点 | 最多 | 必然触发？ | 时机 |
 |-------------+------------------+------+------------+------|
-| =my/before-init-hook= | =before-init-hook= | 1 | **未接线** | early-init 之后、init.el 之前 |
+| =my/before-init-hook= | =before-init-hook= | 1 | 未接线 | early-init 之后、init.el 之前 |
 | =my/after-init-hook= | =after-init-hook= | 1 | 是 | init.el 之后、命令行文件之前 |
-| =my/first-file-hook= | =find-file-hook= | 1 | **否**，要访问过文件 | 会话中第一个文件 buffer；位置浮动 |
+| =my/first-file-hook= | =find-file-hook= | 1 | 否，要访问过文件 | 会话中第一个文件 buffer |
 | =my/startup-hook= | =emacs-startup-hook= | 1 | 是 | 命令行参数处理完之后 |
 | =my/window-ready-hook= | =window-setup-hook= | 1 | 是 | frame 参数 / 字体应用完之后 |
-| =my/idle-hook= | =run-with-idle-timer= | 1 | **否**，要进入空闲 | 空闲 =my/init-idle-delay= 秒（默认 1） |
+| =my/idle-hook= | =run-with-idle-timer= | 1 | 否，要进入空闲 | 空闲 =my/init-idle-delay= 秒（默认 1） |
 
-每个 hook 最多跑一次（=my/init-run-hook-once= 用 =my/init--completed-hooks= 守门）。=--batch= 下这些
-启动钩子和 idle timer 都不会自己跑，要 =my/init-run-all=。
+** 挂载清单
 
-=find-file-hook= 在 Emacs 里每次都触发（=revert-buffer= 也算），这里靠转发器跑完
-即 =remove-hook= 变成一次性；=my/idle-hook= 没有对应的 Emacs 钩子，是转发
-=my/after-init-hook= 时创建的一个 idle timer。
+实际有内容的是下面四个：
 
-** 挂载清单（按实际执行顺序）
-
-=my/before-init-hook= 和 =my/first-file-hook= 目前是空的（=before-init=
-甚至没有接线，原因见上）。实际有内容的是下面四个：
 *** =my/after-init-hook=（原生 =after-init-hook=）
 
 | # | 函数 | 来自 | depth | 做什么 |
 |---+------+------+-------+--------|
 | 1 | =my/init-ui-activate-modeline= | init-ui | 0（默认） | 开 doom-modeline |
 | 2 | =my/init-defaults-activate-display= | init-defaults | 10 | 开全局行号 |
-| 3 | =my/init-defaults-activate-treesit= | init-defaults | 20 | =setopt treesit-enabled-modes=，写静态 =major-mode-remap-alist= |
-| 4 | =my/init-defaults-activate-files= | init-defaults | 30 | =recentf= + =save-place=，读盘、恢复上次光标位置 |
-| 5 | =my/init-defaults-activate-scratch= | init-defaults | 35 | 恢复 =*scratch*=（=persistent-scratch=），开自动保存 |
+| 3 | =my/init-defaults-activate-treesit= | init-defaults | 20 | =setopt treesit-enabled-modes=，写 =major-mode-remap-alist= |
+| 4 | =my/init-defaults-activate-files= | init-defaults | 30 | =recentf= + =save-place= |
+| 5 | =my/init-defaults-activate-scratch= | init-defaults | 35 | 恢复 =*scratch*=（=persistent-scratch=） |
 | 6 | =my/init-defaults-activate-editing= | init-defaults | 40 | =delete-selection= / =pixel-scroll= / =repeat= / =show-paren= / =blink-cursor= |
-| 7 | =my/init-defaults-activate-formatting= | init-defaults | 50 | 开 =apheleia-global-mode=（保存时异步格式化） |
-
-之所以必须在这个 hook：命令行给的文件在 =after-init-hook= **之后**才打开。
-由此推出三条硬约束：行号与 tree-sitter 映射必须已生效（2、3）；
-文件必须能被记录进 recentf、并恢复上次的光标位置（4——=save-place-mode=
-只是往 =find-file-hook= 里加一个函数，晚开就再也补不回来，实测早开能回到第
-3 行、晚开只能停在第一行）；第一下按键依赖的行为要已就位（6）。
+| 7 | =my/init-defaults-activate-formatting= | init-defaults | 50 | 开 =apheleia-global-mode= |
 
 *** =my/startup-hook=（原生 =emacs-startup-hook=）
 
@@ -132,793 +98,114 @@
 |---+------+------+--------|
 | 1 | =my/init-defaults-activate-scratch-mode= | init-defaults | 在 =*scratch*= 里开 =persistent-scratch-mode= |
 
-=*scratch*= 的 major mode 在 daemon 等启动路径上是在 =after-init-hook= 之后才
-设定的，而换 major mode 会清掉 buffer 局部的 minor mode，所以这个开关放在
-startup；scratch 的内容恢复仍在 =after-init-hook=（第 5 项）。
-
 *** =my/window-ready-hook=（原生 =window-setup-hook=）
 
 | # | 函数 | 来自 | depth | 做什么 |
 |---+------+------+-------+--------|
-| 1 | =my/init-profile-activate= | init-profile | 5 | 应用键位方案：加载 Evil、装 leader、which-key 标签 |
+| 1 | =my/init-profile-activate= | init-profile | 5 | 应用键位方案 |
 | 2 | =my/init-ui-activate-display= | init-ui | 10 | 主题、字体、column-number、size-indication |
-| 3 | =my/init-env-activate= | init-env | 20 | 读 PATH 缓存，必要时才开 shell |
-| 4 | =my/eglot-shell-path-setup= | init-eglot | 30 | 补 =~/go/bin=、重试被跳过的 Eglot 连接 |
+| 3 | =my/init-env-activate= | init-env | 20 | 读 PATH 缓存 |
+| 4 | =my/eglot-shell-path-setup= | init-eglot | 30 | 补 =~/go/bin=、重试 Eglot 连接 |
 | 5 | =my/init-evil-activate= | init-evil | 40 | 开 kirigami 折叠模式 |
-| 6 | =my/init-completion-activate= | init-completion | 40 | 加载并开启 vertico / marginalia / corfu / which-key |
+| 6 | =my/init-completion-activate= | init-completion | 40 | 加载 vertico / marginalia / corfu / which-key |
 
-顺序上的两个硬要求：**键位方案必须最先**（它决定第一下按键怎么解析），
-**PATH 必须在 Eglot 收尾之前**；而且 =init-env= 的慢路径会先 =redisplay=，
-所以显示设置（第 2 项）必须排在它前面。
-
-*** =my/idle-hook=（空闲计时器，默认 1 秒）
+*** =my/idle-hook=（空闲计时器）
 
 | # | 函数 | 来自 | 做什么 |
 |---+------+------+--------|
 | 1 | =my/init-defaults-activate-session= | init-defaults | =savehist= / =global-auto-revert= / =winner= |
-| 2 | =my/init-ui-activate-diff-hl= | init-ui | =diff-hl= 变更指示（≈50ms） |
-
-只剩这三类不着急的事：=savehist= 管 minibuffer 历史，=auto-revert= 和
-=winner-mode= 都是 globalized minor mode，开启时会把已有 buffer 一起接管，
-所以晚一秒没有副作用；=diff-hl= 是纯装饰。
-
-** 顺序是怎么决定的
-
-同一 hook 内按 =add-hook= 的 depth 升序执行；depth 相同时：
-
-- depth **为正** → 后注册的排**后面**；
-- depth **为 0 或不给** → 后注册的排**前面**（也就是反向）。
-
-落到我们的清单上：
-
-- =my/window-ready-hook= 用了显式 depth（5/10/20/30/40），所以顺序与模块加载顺序无关；两个 depth 40 之间按注册先后（=init-evil= 先于 =init-completion=）。
-- =my/after-init-hook= 里模式行那一项没写 depth（默认 0），所以它排在 10 和 20
-  **之前**。这三件事互不依赖，谁先谁后无实质影响；真正的约束只有"都在
-  =after-init= 内完成"。若以后加进有依赖的新项，给它显式 depth，别依赖默认值。
-- =my/idle-hook= 两项都是默认 depth 0，因此按**反向注册顺序**执行
-  （diff-hl → session）。两者互不依赖。
-
-** 整体时间线
-
-#+begin_example
-加载期（init.el）   只做设置和定义，第三方包 0 个
-  ↓
-after-init         行号、ts 模式重映射、recentf+save-place、scratch、编辑手感、格式化、doom-modeline
-  ↓
-window-ready       键位方案(Evil+leader) → 主题字体 → PATH → Eglot 收尾
-                   → kirigami → 补全栈        ← 首帧绘制发生在这里
-  ↓
-idle（1s 后）      savehist、auto-revert、winner、diff-hl
-#+end_example
-
-注意：=after-init= 和 =window-ready= 都在**首帧绘制之前**，把活儿挪到这两个 hook
-只是换个位置，不省总时间；只有挪到 =idle= 才是真的"首帧之后再干"。
-
-** 各 hook 在三种启动方式下的表现
-
-同一份探针实测（GUI / 终端都带命令行文件，daemon 用 emacsclient 打开文件）：
-
-| 我们的 hook | GUI | 终端（=-nw=） | daemon + client | 说明 |
-|-------------+-----+---------------+-----------------+------|
-| =my/before-init-hook= | （未接线） | （未接线） | （未接线） | 变量保留；要启用需把加载挪回 early-init |
-| =my/after-init-hook= | ② | ② | ② | 命令行文件还没打开；idle timer 在这里创建 |
-| =my/first-file-hook= | ③ startup 之前 | ③ | ⑤ client 打开时 | 位置浮动，且可能永不触发 |
-| =my/startup-hook= | ④ | ④ | ③ | 命令行参数处理完 |
-| =my/window-ready-hook= | ⑤ | ⑤ | ④ 早于第一个 client | frame 参数/字体已应用 |
-| =my/idle-hook= | ⑥ 空闲 1s | ⑥ | ⑥ | 依赖真正空闲，持续输入会推迟 |
-
-完整时间线（原生事件在括号里）：
-
-#+begin_example
-GUI    : early-init → before-init →（初始 frame）→ init.el → after-init
-         → find-file → startup → term-setup → window-setup → idle
-TTY    : early-init → before-init → init.el → after-init →（tty-setup）
-         → find-file → startup → term-setup → window-setup → idle
-daemon : early-init → before-init → init.el → after-init → startup
-         → term-setup → window-setup →（client）find-file → idle
-#+end_example
-
-三种方式的原生差异（不是这层的行为）：
-
-| | GUI（NS） | 终端（=-nw=） | daemon |
-|---+---+---+---|
-| 初始 frame | =after-make-frame-functions= 在 **init.el 之前**触发 | 终端 frame | 启动时无 frame，client 连上才建 |
-| =tty-setup-hook= | 不跑 | 跑 | 启动阶段不跑 |
-| =term-setup-hook= | 跑 | 跑 | 跑 |
-| =window-setup-hook= | frame 参数应用后 | 同左 | daemon 启动阶段就跑，早于第一个 client |
-
-GUI 下初始 frame 早于 =init.el=，所以主题/字体在 =init.el= 顶层
-=load-theme= 就生效；daemon / 终端仍需要 =after-make-frame-functions= 兜底
-（见 [[file:lisp/init-ui.el][init-ui.el]]）。
-
-=my/init--hook-order= 把 =my/first-file-hook= 放在它最早可能出现的位置，所以
-=my/init-run-all= 的顺序是确定的。
-
-=my/before-init-hook= 目前不接线（变量保留）。实测这个点和 =early-init= 的能力
-完全一样：=window-system= 和 =display-graphic-p= 都是 nil、初始 frame 还没建、
-第三方包也还没激活（我们把 =package-enable-at-startup= 关掉了），所以能做的事
-直接写在 =early-init.el= 里就好。真要启用它，需要把 =init-hooks.el= 的加载和
-那条 =add-hook= 一起挪回 =early-init.el=，=init-hooks.el= 底部有注释示例。
+| 2 | =my/init-ui-activate-diff-hl= | init-ui | =diff-hl= |
 
 ** 用法
 
 #+begin_src emacs-lisp
-(add-hook 'my/idle-hook #'my-feature-activate)   ; 文件顶层，加载期注册
+(add-hook 'my/idle-hook #'my-feature-activate)
 #+end_src
 
-约定：**顶层只放设置和定义，加载/启用包进 =my-<模块>-activate= 这类函数**，
-再挂到某个 hook 上。主题、字体、模式行这类首帧必需的东西留在加载期
-（=window-setup-hook= 之后的第一次重绘才真正画出来，挪过去只增加闪烁风险）。
-
-=emacs -Q --batch -l emacs/tests/init-hooks.el= 会检查映射、顺序、一次性语义，
-以及每个注册项都是真正的函数。
-
-* 启动加载与检查
-
-Org 和 Markdown 的选项放在对应 =use-package= 的 =:config= 中：
-启动时只登记文件关联、autoload、hook 和包安装声明；首次打开对应文件，
-或先调用相关命令加载库时，才应用选项。Org 笔记目录也在首次加载 Org 时创建。
-每个 buffer 的阅读模式仍由 mode hook 启用，第一份文件同样生效。
-
-
-Evil、补全、主题、modeline 保持原有启用时机。键位文件仅登记命令，
-Eglot、Flymake 和 Org 链接中缺少内置 autoload 的命令补充自动加载声明，
-首次调用时才加载对应库，不会因为注册键位提前加载整套功能。
-
-在仓库根目录运行以下命令，检查启动模式和首次调用的自动加载：
-
-#+begin_src sh
-emacs -Q --batch -l emacs/tests/startup.el
-#+end_src
-
-输出包含配置加载及启动 hooks 的耗时；这是批处理测量，不包含 GUI 建窗，
-也不包含首次安装包或下载 grammar 的时间。
-
-想临时试用另一套键位方案而不改保存的选择（不写盘、不改 =etc/custom.el=）：
-
-#+begin_src sh
-MY_KEYBINDINGS_PROFILE=emacs emacs      # 本次启动用 emacs 方案
-#+end_src
-
-本机可执行以下命令，编译配置并生成原生包激活缓存：
-
-#+begin_src sh
-emacs -Q --batch -l emacs/build-config.el
-#+end_src
-
-=.elc= 与 =var/package-quickstart.el*= 都是本机生成的缓存，不进入版本库。
-=early-init.el= 保留源码加载，先设置源码优先规则，再加载其余配置。
-修改源码后，=load-prefer-newer= 会优先加载较新的源码，修改立即可用；
-再次运行构建命令即可恢复编译后的加载速度。编译版本保留运行时的缺包安装检查
-（=:ensure= 与 =:vc= 都保留）。
-缓存缺失时自动回退到普通包初始化；首次安装和补装包仍正常工作。
-通过 =package.el= 安装、升级或删除包会自动刷新激活缓存；手动修改包目录
-或 =package-load-list= 后，运行 =M-x package-quickstart-refresh= 或上述构建命令。
-
-
-* 两套键位方案
-
-配置支持两套键位方案，编辑方式完全不同，功能（包、界面、Org/Markdown 设置）
-完全一样：
-
-| 方案 | 编辑方式 | leader | 说明 |
-|------+----------+--------+------|
-| =vim= | Evil 模态 | =SPC=（普通/可视/动作/只读状态） | 默认；功能键都在 leader 上 |
-| =emacs= | Emacs 原生（不加载 Evil） | 无 | 只补少量原生风格的键，其余用原生键 / =M-x= |
-
-切换（立即生效，并把选择存进 =etc/custom.el=，下次启动沿用）：
-
-#+begin_src emacs-lisp
-M-x my/switch-keybindings     ; 选择 vim 或 emacs
-M-x my/toggle-keybindings     ; 两者互切
-#+end_src
-
-当前方案显示在模式行上（Evil 状态图标右边）：=VIM= 或 =EMACS=，
-鼠标停上去有提示。
-
-** =emacs= 方案没有 leader。** 曾经试过把 =SPC= 后面的键原样搬到 =C-c= 后面，
-但那样很不 Emacs：三键组合、还要和主模式的 =C-c= 前缀抢位置。所以这个方案
-只做两件事：
-
-1. 不启用 Evil，Vim 的模态、寄存器、文本对象一概不参与；
-2. 补几个原生风格的键，全部落在空位或原生命令的超集上：
-
-| 键 | 命令 | 原生是什么 |
-|----+------+------------|
-| =M-g i= | =consult-imenu= | 原生 =imenu= |
-| =M-g g= | =consult-goto-line= | 原生 =goto-line= |
-| =M-s l= / =M-s r= | =consult-line= / =consult-ripgrep= | 原生未绑定 |
-| =S-<方向键>= | =windmove=（窗口间移动） | 原生未绑定 |
-
-其余全部是原生键，包括 =C-x C-f=、=C-x C-s=、=C-x b=、=C-x d=、
-=C-h= 帮助前缀、=C-a= / =C-e=、=M-.=、=C-c= 前缀（完全留给主模式）。
-配置自己的命令（文件侧栏、Markdown 渲染开关、阅读进度等）在
-=emacs= 方案里用 =M-x=（例如 =M-x my/dirvish-side=）。
-
-=vim= 方案保留 Vim 原义，并额外保证：
-=H= / =L= 是窗口顶/底行（切换 buffer 用 =[ b= / =] b=）、
-=Y= 是整行复制、=C-x= 仍是 Emacs 前缀（=C-x C-f= 在普通状态也能用）、
-=C-k= 仍是 Evil 的 =kill-line=；=C-a= / =C-u= 保持 Emacs 原义
-（行首 / 前缀参数），配置不再安装数字增减键。
-
-两个"原地升级"的 Vim 命令：
-
-- =K=（=evil-lookup=，Vim 的 keywordprg）改由 ElDoc 提供文档
-  （=evil-lookup-func=）：Emacs Lisp 符号打开 =describe-symbol= 的文档，
-  其它语言交给 ElDoc，Eglot 下就是 LSP 的 hover 内容。
-- =g d=（=evil-goto-definition=）是 Evil 的复合命令，依次尝试
-  =evil-goto-definition-functions=；这里把顺序调成 **xref → imenu → 搜索**，
-  所以有 LSP 时走 xref，没有时仍能退回大纲或普通搜索（原生 =xref-find-definitions=
-  只有 xref 一条路）。
-- 窗口导航完全用 Vim 自己的 =C-w h/j/k/l=，外加 =SPC w h/j/k/l=；
-  =C-h= / =C-j= / =C-k= / =C-l= 一律不动（=C-h= 因此仍是 Emacs 的帮助前缀，
-  =C-k= 是 Evil 的 =kill-line=）。
-
-* 常用按键
-
-=which-key= 会在按完 =SPC= 后列出可用按键：常用入口在前，带 =+= 的
-功能分组在后，进入分组后显示中文操作名。插入状态下 =SPC= 仍然是空格。
-旧单键别名保留可用，但隐藏其重复提示。下表是 =vim= 方案；=emacs= 方案
-没有这些键（见上一节）。
-
-| 按键 | 作用 |
-|------+------|
-| =SPC f f= | 打开文件（minibuffer 路径补全，同 =C-x C-f=） |
-| =SPC SPC= | 查找项目文件；项目外搜索当前目录 |
-| =SPC := / =SPC s C= | 执行命令（M-x） |
-| =SPC ,= / =SPC f b= | 切换 buffer |
-| =SPC b b= / =SPC `= | 切回上一个 buffer |
-| =H= / =L=，=[ b= / =] b= | 上一个 / 下一个 buffer |
-| =SPC b i= | ibuffer 列表 |
-| =SPC b d= / =SPC b D= | 关闭 buffer / 同时关闭窗口 |
-| =SPC e= / =SPC f e= | 文件侧栏 |
-| =SPC E= / =SPC f E= | 当前文件所在目录（Dired） |
-| =SPC f z= | 跳到 zoxide 记住的目录（按使用频率） |
-| =SPC f F= | 当前目录查找文件（fd） |
-| =SPC f d= | fd 搜索结果变成可编辑 dired buffer |
-| =SPC f c= / =SPC f n= | 打开配置 / 新建未命名 buffer |
-| =SPC f r= / =SPC f p= | 最近文件 / 切换项目 |
-| =C-s= / =SPC f s= | 保存文件（C-s 在普通、插入、可视状态生效） |
-| =SPC f t= / =SPC f T= | 项目 shell / 当前目录 shell |
-| =SPC /= / =SPC s g= | 项目 ripgrep 搜索 |
-| =SPC s G= / =SPC s b= | 当前目录搜索 / 当前 buffer 行搜索 |
-| =SPC s s= | 跳转标题或符号 |
-| =SPC s r= | 查询替换 |
-| =SPC s c= / =SPC s h= / =SPC s k= | minibuffer 历史 / 帮助搜索 / 按键列表 |
-| =SPC s m= / =SPC s d= | 标记 / Flymake 诊断 |
-| =SPC -= / =SPC \|= | 上下 / 左右分屏（后者是竖线键） |
-| =SPC w h/j/k/l= 或 =C-h/j/k/l= | 普通状态切换到左 / 下 / 上 / 右窗口 |
-| =SPC w w= / =SPC w d= / =SPC w m= | 下一窗口 / 关窗口 / 仅保留当前窗口 |
-| =g d= / =K= / =M-?= | 定义（=evil-goto-definition=）/ 文档（ElDoc）/ 引用（xref） || =SPC c l= / =SPC c R= / =SPC c q= | 手动连接 / 重连 / 断开语言服务器 |
-| =SPC c a= / =SPC c r= / =SPC c f= | 代码操作 / 重命名 / 格式化（需 Eglot 已连接） |
-| =SPC c d= / =SPC c s= | buffer 诊断 / 大纲侧栏 |
-| =[ d= / =] d=，=[ q= / =] q= | 前后诊断 / 前后编译或搜索结果 |
-| =SPC g g= / =SPC g s= | Git 状态（Magit） |
-| =SPC g d= / =SPC g b= | 工作区差异 / 逐行追溯 |
-| =SPC g f= / =SPC g l= | 文件历史 / 仓库历史 |
-| =SPC u w= / =SPC u l= | 自动折行 / 行号 |
-| =SPC u d= | 切换 Flymake 诊断 |
-| =SPC u z= / =SPC u c= | 居中写作 / Markdown 标记隐藏 |
-| =SPC u m= | 切换当前 buffer 的模式行（=mode-line-invisible-mode=） |
-| =*xref*= / =*grep*= 里 =e= / =r= | 进入可编辑模式 / 批量替换命中（内置，见「Evil」一节） |
-| =s-s= / =s-c= / =s-v= / =s-z= | macOS Cmd 键：保存 / 复制 / 粘贴 / 撤销（见「鼠标与 Cmd 键」） |
-| =SPC A d= | DeepSeek Harness agent 会话（见「应用」一节） |
-| =SPC q q= | 退出 Emacs（未保存文件会询问） |
-| =SPC n a= / =SPC n c= / =SPC n l= | Org 议程 / 捕获 / 存储链接 |
-| =SPC m h= / =SPC m i= | Markdown 标记 / 内联图片 |
-| =SPC m .= / =SPC ;= | Embark 操作 / 默认操作 |
-| =SPC j j= / =SPC j l= | Avy 字符跳转 / 行跳转 |
-| =z o= / =z c= / =z a=，=z r= / =z m= | 打开 / 关闭 / 切换折叠，展开 / 折叠全部 |
-| =C-a= | 光标处数字加一（=C-u -1 C-a= 减一；=C-x= 保留为 Emacs 前缀） |
-| =TAB=（插入状态） | 补空格到下一制表位 |
-| =M-y= | 带预览的 yank-pop |
-
-键位参考 [[https://www.lazyvim.org/keymaps][LazyVim 官方 keymaps]]，用现有包与 Emacs 内置命令实现对应功能，
-不安装 Neovim 插件。窗口最大化 =SPC w m= 使用 =delete-other-windows=，再次按不会恢复布局。
-=g r= 改为引用查询；原 evil-mc 的 =gr= 前缀不再可用，多光标命令可通过 =M-x evil-mc-…= 调用。
-
-原先单键 =SPC f/b/s/w/c= 已改为分组；原 =SPC SPC=（M-x）移到 =SPC :=，
-=SPC e=（配置）移到 =SPC f c=，=SPC .=（Embark）移到 =SPC m .=，
-=SPC w=（居中）移到 =SPC u z=，Org 捕获移到 =SPC n c=。
-仍保留 =SPC a/l/r/i/o/h= 和 Markdown、Avy 的个人键位。
-
-小缓冲区（minibuffer）里没有 Evil 状态，=SPC= 必须输入空格，所以
-=Embark= 在那里保留 =C-.= / =C-;=。
-
-* Evil
-
-- =vim= 方案下启动即启用 =evil-mode=（=emacs= 方案完全不加载它）。
-  普通状态就是 Vim 的普通模式：=i= / =a= 进入插入，=ESC= 回到普通，
-  =:= 执行 Ex 命令，=u= / =C-r= 撤销和重做。
-- leader 键是 =SPC=，在普通、可视、动作和只读（motion）状态都生效；
-  插入状态下 =SPC= 仍然是空格。=emacs= 方案**没有 leader**（早期版本镜像过
-  一套 =C-c= 的键，因为太不原生已经删掉），命令走 =M-x=。
-- Dired、帮助、grep、ibuffer 和右侧大纲等模式会自己占用 =SPC=
-  （滚动或下一行），配置里用 buffer 局部的 Evil 绑定覆盖了它们，
-  因此这些地方 =SPC= 仍然是 leader；翻行请用 =j= / =k=。
-- 光标：普通状态方块，插入状态竖线，可视状态橙色方块。
-- =evil-collection= 为 Dired、help、ibuffer、occur、grep、compile、xref
-  和 Magit 提供 Vim 风格的按键（Magit 的适配在 =init-app.el= 里单独调用）；
-  其他模式保留 Emacs 原生按键和 leader。
-- 只读视图、且自带单键命令的 buffer（=dsh-emacs= 的会话列表和聊天）改用
-  Evil 的 **=emacs= state**：按键全走原生绑定，=ESC= 仍可回 normal。
-  这类模式自己的键位比 Vim 的更有用，normal state 只会把它们抢掉。
-- 撤销系统使用 Emacs 31 自带的 =undo-redo=。
-- 屏内跳转（Avy）：=SPC j j= 输入 1–2 个字符后跳到屏幕上的任意出现点，
-  =SPC j l= 跳到屏幕内任意一行。
-- 数字运算：=C-a= 把光标下的数字加 1（可带参数：=5 C-a=、
-  =C-u - C-a= 递减；可视状态对每一行同时生效）。
-- Git：未提交改动会用侧栏色块标在对应行旁，保存和打开文件时都
-  会刷新；Dired 里也显示文件状态（diff-hl）。
-- 环绕修改（Vim surround）：=ysiw(= 给单词加括号，=cs"= 把引号换成别的
-  配对符，=ds(= 删除括号；普通和可视状态都可用。
-- =%= 在配对之间跳转（evil-matchit）：括号、HTML 标签、Markdown
-  代码围栏等。
-- 多光标（evil-mc）：=grm= 把光标下单词的所有匹配都变成光标，
-  =grq= 清掉全部，=grr= / =grs= 恢复 / 暂停，=C-n= / =C-p= / =M-n= / =M-p=
-  在各个光标间移动；编辑会同时应用到所有光标。
-- 搜索手感：=/*= / =?= / =n= / =N= 走的是 Evil 的 =isearch= 模块
-  （=evil-search-module= 为 =isearch=），所以 =isearch-wrap-pause 'no=
-  （到末尾静默环绕）、=isearch-repeat-on-direction-change= （=C-r= 后直接跳到
-  下一个匹配）、=isearch-allow-scroll= （搜索中 =C-v=/=M-v= 可滚动）都对它们生效。
-  =C-s= 在本方案里是保存，但这只影响"怎么开始搜索"，不影响搜索行为。
-  =isearch-lazy-count= 打开了（模式行显示 =3/17=），它是唯一有成本的设置：
-  要统计全 buffer 匹配（实测 1MB 约 14ms，分片做），超大文件里可关掉。
-- 可写的结果 buffer（Emacs 31 内置，等同原来的 wgrep）：
-  - 在 =*xref*= 结果里（=M-?= 查引用、=C-x p g= 项目正则搜索）按 =r=
-    会逐条问 y/n 后**直接替换到文件**（=xref-query-replace-in-results=）；
-  - 按 =e= 进入 =xref-edit-mode= / =grep-edit-mode=（=*grep*= 里也一样），
-    结果 buffer 变成可写、只有命中文本能改，=C-c C-c= 写回并退出编辑模式。
-    注意这两处 =e= 在 Evil 的普通状态下本来被 =evil-forward-word-end= 占了，
-    =init-keys-vim.el= 里按 keymap 单独把它们改了回来（原生方案不用改，
-    主模式 map 本来就生效）。
-  - 纯文本 buffer 也能用：=M-?= 走"项目内 ripgrep 文本搜索"（没有 backend
-    时走默认实现），结果同样进 =*xref*=，所以 =r= 一样可用；=M-.=（定义）
-    在纯文本里没有 backend，需要 =eglot= / =visit-tags-table= /
-    =etags-regen-mode=。
-- 折叠（[[https://github.com/jamescherti/kirigami.el][kirigami]]）：=zo= / =zO= 打开光标处的可折叠区（递归打开），
-  =zc= 关闭，=za= 切换，=zr= / =zm= 打开 / 关闭全部。Fold 命令按当前
-  buffer 自动选后端：Org 里是标题折叠和源码块 / 抽屉，
-  Markdown 里是标题折叠，代码 buffer 里是 =hs-minor-mode=。
-  kirigami 自己不实现折叠，只负责统一按键、选后端、抹平后端差异（恢复
-  光标列位置、不跳窗口），所以代码 buffer 里必须真的开着 =hs-minor-mode=
-  （=init-defaults.el= 的 =prog-mode-hook= 已开）。
-- 代码折叠不会把 `} else {' 黏到折叠行上：=hs-adjust-block-end-function=
-  （Emacs 31 新增）把 overlay 收到闭括号上一行，所以 =} else {= 单独一行，
-  和 VS Code 的观感一致。注意 =hs-indentation-mode=（31.1 新增，基于缩进）
-  能折 =#ifdef= 但认不出 C++ 的 =label:=，而且和 =hs-minor-mode= 同时开
-  只会听它的（上游主分支实测），所以这里只用 =hs-minor-mode=。
-- 跳转（Imenu、Avy、xref）后有轻微闪烁标记，落点离开屏幕时更明显
-  （nav-flash）。
-
-Org / Markdown 不做常驻字数统计；需要时用 =M-x count-words= 手动统计。
-
-* 模板补全
-
-使用 [[https://github.com/minad/tempel][Tempel]] 和现成的
-[[https://github.com/Crandel/tempel-collection][tempel-collection]]，不维护本地模板。
-代码、正文和配置 buffer 会把精确匹配的模板名交给 Corfu 展示；普通补全
-继续由 Eglot / Cape 提供。Tempel 与模板集合按需加载。
-
-- =M-*=：列出当前模式可用的模板并插入（=tempel-insert=）。
-- =M-+=：在光标处补全模板名（=tempel-complete=）。
-- 模板展开后用 =M-}= / =M-{= 在字段间前进 / 后退，
-  或执行 =M-x tempel-next= / =M-x tempel-previous=。
-- =M-RET=：结束当前模板编辑（=tempel-done=）；TAB 保持原来的行为。
-
-* 代码阅读标记
-
-=rainbow-delimiters= 在代码 buffer 中按括号嵌套深度着色，进入代码模式时加载。
-Markdown / Org 正文默认不开启。
-
-=symbol-overlay= 手动标记当前符号，在当前 buffer 的同名位置高亮并支持跳转；
-不自动追随光标高亮，首次调用命令时才加载。按名字匹配，不替代 Eglot 的语义引用。
-高亮文本上的单字母快捷键已禁用，避免影响 Evil 和正常输入。
-
-| 功能 | 通用键位 | Vim leader |
-|------+----------+------------|
-| 标记 / 取消当前符号 | =M-s h .= | =SPC s H= |
-| 下一个同名位置 | =M-s h n= | =SPC s n= |
-| 上一个同名位置 | =M-s h b= | =SPC s p= |
-| 清除全部标记 | =M-s h c= | =SPC s u= |
-
-* 缩进参考线
-
-代码与 YAML buffer 自动开启 =indent-bars-mode=，在编辑区用竖线显示缩进层级，
-类似 indent-blankline。使用单色字符线，终端也可显示；不改变缩进或文件内容。
-=M-x indent-bars-mode= 可在当前 buffer 开关。Markdown / Org 正文默认不开启。
-
-* 保存时格式化
-
-[[https://github.com/radian-software/apheleia][apheleia]] 在保存时用**外部**格式化器重排 buffer，但它是异步的：
-格式化器在子进程里跑，结果以 diff 形式应用，光标和滚动位置不跳，
-慢的格式化器不会卡住保存（也不走 LSP，和 Eglot 的 =eglot-format= 无关）。
-
-- 用哪个格式化器由 =apheleia-mode-alist= 按主模式决定，本机已装
-  =rustfmt=（rust 工具链）和 =gofmt=（go），所以 Rust / Go 保存即格式化；
-  没装的（python 的 =black=/=ruff=、toml 的 =taplo= 等）会被**静默跳过**，
-  不会弹错。
-- =emacs-lisp-mode= 被特意从 =apheleia-mode-alist= 里去掉：它的格式化器是
-  =indent-region=，会把本配置里手工对齐的注释块重排。需要时仍可
-  =M-x apheleia-format-buffer= 手动格式化。
-- 关掉：=M-x apheleia-global-mode=（全局），或在某个 buffer 里
-  =M-x apheleia-mode=。
-
-* 应用（init-app.el）
-
-编辑配置之外、但用 Emacs Lisp 写的应用单独放 [[file:lisp/init-app.el][init-app.el]]：它们是**可选**的，
-下载失败或没装都不能挡住编辑器启动，所以都 =:defer t= 按需加载；ELPA 上没有的
-用 =use-package :vc=（clone 到 =elpa/=，已被 gitignore；升级 =M-x package-vc-update=），
-Magit 走 MELPA 的 =:ensure t=。=init.el= 最后才 =require= 它。
-
-** DeepSeek Harness 客户端（=SPC A d=）
-
-=[[https://github.com/vritser/dsh-emacs][dsh-emacs]]=：在 Emacs 里用 DeepSeek Harness agent。它不在任何 ELPA 归档上，
-所以走 =:vc=；项目不打 tag，因此 =:rev :newest= 跟默认分支。
-
-- 服务端 =dsh= 自己在 Emacs 外装：=bun add -g @deepseek-ai/dsh=。
-  =SPC A d=（=dsh-emacs=）会自动探测 =127.0.0.1:3080=，没起就在后台拉
-  =dsh web --no-open= 并等它就绪，launch token 由包自己处理。
-  包内的按需安装命令也改成了 =bun=（默认是 npm）。
-- 首次配模型：=M-x dsh-emacs-add-provider= 或 =M-x dsh-emacs-open-web= 用浏览器登录；
-  凭据存在 =~/.dsh/=，不进 Emacs 配置。
-- 聊天 buffer 里：=C-c C-c= 发送、=C-u C-c C-c= 插话、=C-c C-b= 中断、
-  =C-c C-m= / =C-c C-e= 换模型/推理强度、=C-c C-a= 加附件、=C-c C-o= 载入更早历史、
-  =C-c >= 回到草稿、=M-p= / =M-n= 输入历史、=TAB= 补全（=@= 引用文件、=/= 命令）。
-- **Evil 适配**：上游完全不支持 Evil，而它的 buffer（聊天、会话列表、草稿、
-  计划、任务输出）都是只读视图或纯文本输入区，normal state 会把单键命令和
-  输入抢掉（会话列表的 =c= / =d= / =r= / =q= / =RET=，聊天的 =M-p= / =M-n=，
-  以及首次创建会话时草稿里的打字）。所以这几个模式都用 Evil 的 =emacs=
-  state：非模态，按键全走原生绑定，=ESC= 仍能回 normal，Vim 键和 =SPC=
-  leader 随时可用。见 =init-app.el= 的 =:init=（hook 里按当前键位方案判断，
-  原生方案不因此加载 Evil）。
-- **行号**：聊天、会话列表、草稿、计划和任务输出这些 buffer 都关掉行号
-  （=init-app.el= 里按模式挂钩）。它们都是阅读/写作视图，不是代码。
-- 已知坑：=all_proxy= 若是 SOCKS，=dsh= 会警告不支持并直连，需要 http 代理 URL。
-
-** Magit（Git 界面）
-
-=SPC g g=（或 =C-x g=）打开 [[https://magit.vc/][Magit]] 状态 buffer：暂存、提交、分支、
-log、blame 都在里面。它从 MELPA 安装（=:ensure t=），同样 =:defer t=，
-第一次打开时才加载。
-
-- =SPC g g= / =SPC g s= 状态，=SPC g d= 工作区差异，=SPC g b= 逐行追溯，
-  =SPC g f= 当前文件历史，=SPC g l= 仓库历史；=C-x g= 也是状态。
-- 状态和 log 用当前窗口，diff 和 git 输出在旁边窗口打开
-  （=magit-display-buffer-same-window-except-diff-v1=），暂存时文件仍可见。
-- Evil：Magit 到处是单键命令，normal state 会抢掉它们。vim 方案下
-  =init-app.el= 在 Magit 加载时调用 =evil-collection-magit-setup=；
-  emacs 方案不加载 Evil，保留 Magit 自己的按键。
-- 未提交改动仍由 diff-hl 在侧栏标出（见「Evil」一节）。
-
-* 鼠标与 Cmd 键
-
-- 滚轮/触控板开着 =pixel-scroll-precision-mode=，另外设了
-  =scroll-preserve-screen-position=：滚动时光标在屏幕上的高度不变，不会被
-  一次快速滑动拖出可见区而触发画面跳动。
-- =context-menu-mode= 开着：macOS 上默认的右键是 =mouse-save-then-kill=，
-  也就是**右键会把选区删掉**；打开后右键出上下文菜单。
-- =mouse-drag-and-drop-region= 开着：拖选中的文字到另一个窗口/应用。
-- =mouse-yank-at-point t=：中键粘贴插到光标处而不是鼠标位置。
-- **Cmd（super）键**：Emacs 31 里没有任何 =s-= 绑定，所以 Cmd 系快捷键本来
-  是空的。现在绑了（=init-keys.el=，两个方案共用）：
-  =s-s= 保存、=s-c= 复制、=s-v= 粘贴、=s-x= 剪切、=s-a= 全选、
-  =s-z= 撤销、=s-Z= 重做、=s-f= 搜索。
-- 觉得触控板"滑太远"：=ns-use-mwheel-acceleration= / =ns-use-mwheel-momentum=
-  默认是 =t=，设成 =nil= 就是 1:1 精确滚动（要写 =early-init.el=）。
-
-* 注释与 docstring 编辑
-
-=M-x separedit=（=C-c '=）=[[https://github.com/twlz0ne/separedit.el][separedit]]：把光标处的注释块/字符串/docstring/其中的代码块抽到
-一个独立 buffer 里编辑，自动剥掉 =//=、=#=、=*=、="""= 这些边界，=C-c C-c= 写回。
-
-- 编辑 buffer 用 =markdown-mode=（=separedit-default-mode=），所以能在 docstring
-  或 C 注释里写 markdown，还能在里面的 fenced block 上再按 =C-c '= 进一层。
-- Org buffer 里的 =C-c '= 仍然是 =org-edit-special=（主模式键位优先），不冲突。
-- 它靠 **font-lock 的 face** 判断“这里是不是注释”，所以 buffer 必须已
-  fontify（正常显示时总是如此；脚本/批处理里要先 =font-lock-ensure=）。
-- **限制**：=.md= 文件开在 =markdown-ts-mode=，而 separedit 的 markdown 支持
-  来自 =markdown-mode= 的 =markdown-edit-code-block=，所以**直接在 .md 里
-  编辑 fenced block 不行**（会报 =Not inside a edit block=）；注释/字符串内部的
-  围栏则没问题。
-- 和 =apheleia= 不冲突：编辑 buffer 是 indirect buffer 且 =buffer-file-name= 为
-  =nil=，不会触发保存格式化；=separedit-save= 保存的仍然是父 buffer 对应的
-  真实文件。
-- 加支持新模式：往 =separedit-comment-delimiter-alist= /
-  =separedit-comment-encloser-alist= / =separedit-string-quotes-alist= 里补。
-  =rust-ts-mode= 不需要补（实测可用，走 =comment-start= 的通用路径）。
-
-* Markdown
-
-- =.md= / =.markdown= / =.mdown= 默认打开的是 Emacs 31 内置的
-  =markdown-ts-mode=（tree-sitter 语法解析，位于
-  =textmodes/markdown-ts-mode.el=）。不再自动安装或配置传统的 =markdown-mode=。
-- 样式和 Org 对齐：=markdown-ts-heading-N= 继承 =outline-N=（和 =org-level-N=
-  同源），引用块 / 代码块 / 表格 / 列表符号也映射到 Org 的 =org-quote= /
-  =org-block= / =org-table= / =org-modern-symbol=，所以 .md 和 .org 的标题颜色、
-  列表、代码块观感一致（见 =init-ui.el=）。
-- tree-sitter 语法文件统一放在配置目录下的 =var/treesit/=：
-  =markdown=、=markdown-inline=、=python=（代码围栏内高亮需要）。
-  在新机器上执行本目录的 =./build-tree-sitter.sh= 一键重建
-  （Emacs 31 自带安装器对两语言的 markdown 仓库会找错目录，
-  所以脚本手工编译，等价于 =treesit-install-language-grammar=）。
-  哪些语言用 tree-sitter 模式由 =my/treesit-enabled-ts-modes= 决定（目前是
-  =rust-ts-mode=、=python-ts-mode=、=toml-ts-mode=，语法都确认已装）。它通过
-  内置的 =treesit-enabled-modes= 写静态的 =major-mode-remap-alist=，
-  实测开文件 6.0ms/个。**注意两点**：必须用 =setopt=（=setq= 不会触发它的
-  =:set=，等于什么都没做）；**列表里不能放语法没装的模式**——内置重映射是
-  无条件的，放了会得到一个没有高亮的 ts-mode，而且每次打开这类文件都会问
-  「缺语法，要不要装」。装新语法用
-  =M-x treesit-install-language-grammar=，然后把它加进这个列表。
-  Org 里的 rust 代码块同样走 rust-ts-mode 高亮。
-  安装位置统一在 =var/treesit/=：自动提示那条路本来就会选
-  =treesit-extra-load-path= 里第一个可写目录；而手动 =M-x
-  treesit-install-language-grammar= 的默认目录是 =locate-user-emacs-file=，
-  也就是**配置目录旁边的 =tree-sitter/=**（不在搜索路径里、也没被 git 忽略），
-  所以 =init-defaults.el= 里把它的默认值也改到了 =var/treesit/=
-  （=treesit--install-language-grammar-out-dir-history=）。.gitignore 仍保留
-  =/tree-sitter/= 兜底，万一以后又被装到那里也不会进仓库。
-  手工构建脚本与自动安装都使用 =var/treesit/=，由 =no-littering= 登记搜索路径；
-  构建脚本按自身所在目录定位，不依赖运行时的工作目录。
-  文件模式选择只检查当前模式对应的语法。
-- 代理：=M-x my/proxy-enable=（默认 =my/proxy-url=，即
-  =http://127.0.0.1:10808=，可带前缀参数改）同时设两处：
-  - =http_proxy= / =https_proxy=（大小写两套）写进进程环境，作用于**之后
-    启动的子进程**：git clone 语法、Eglot 起的语言服务器、curl 等；
-  - =url-proxy-services=，作用于 **Emacs 自己发的 HTTP**：=package.el=、
-    =url-retrieve= 等。
-  两者互不相通（子进程看不到 Emacs 变量，=url.el= 也不读环境变量），
-  所以必须两边都设。=M-x my/proxy-disable= 关掉：有快照就还原原值，
-  没快照就直接清空。都不写盘，下次启动恢复直连。
-- [[https://github.com/Thysrael/markdown-ts-appear][markdown-ts-appear]]：阅读时把文本渲染成接近成品的样式（标题、
-  列表符号 =●=、复选框 =☑= 中间态、表格宽度感知、引用竖线等），
-  光标移动到某个元素上时只显示那一小处的源码。Evil 下只有插入状态
-  才显示源码，其余时间全部渲染。
-- =SPC m h= 切换渲染与源码：在 tree-sitter 模式里关掉 / 打开
-  appear 渲染；仍用 =markdown-mode= 的 buffer 里对应传统的标记隐藏。
-- 代码块保持素净：围栏仍然显示原始的三个反引号，没有语言标签或
-  装饰边框；底色和 Org 源码块一样交给主题（=markdown-ts-code-block=），
-  保证整段看起来是"一块"而不是正文。
-  内容本身按语言着色：python 等带 tree-sitter 语法的走内嵌解析器，
-  elisp 等无语法的走对应主模式的 font-lock。
-- =SPC m i= 切换内联图片显示； tree-sitter 模式打开文件时默认显示本地图片
-  （=markdown-ts-inline-images= = t）。
-- 脚注引用 =[^id]= 显示为 80% 字号的上标，文末解释使用 90% 字号，
-  保持正常基线；点击编号跳转，=M-,= 返回。源码显露和复制仍保留原始
-  Markdown；随 appear 开关切换。支持引用式脚注，不处理 Pandoc 的 =^[内联脚注]=。
-- 数学 LaTeX 和 Mermaid 图表预览保持关闭（本机没有 LaTeX 和 mermaid
-  依赖，需要时按 mtsa README 打开对应开关）。
-- Markdown / Org 里不显示行号，模式行末尾改为阅读进度条
-  （▓▓░░ + 百分比），随光标移动实时更新。
-- 换行占满整行宽度再折（按字符折行），中文长句不会提前断行。
-- 正文默认居中显示（Olivetti），适合长文阅读；=SPC u z= 可关闭。
-- 表格用 [[https://github.com/casouri/valign][valign]] 做像素级对齐，中英文混排也不会错位。
-- 本配置不依赖外部 Markdown 处理器，因此没有独立 HTML 预览。安装
-  =pandoc= 后可以在 =init-markdown.el= 里设置 =markdown-command=，
-  再用 =markdown-preview=；纯阅读时 appear 渲染已经足够。
-
-* Org
-
-- [[https://github.com/minad/org-modern][org-modern]]：现代的项目符号、TODO 标签、时间戳和表格样式。
-  - 折叠箭头：默认第三级用 =⯈/⯆=（U+2BC8/U+2BC6），JetBrains Mono
-    和 Apple Symbols 都没有这两个字形，会显示成 LastResort 方块；配置里
-    把 =org-modern-fold-stars= 换成 =▶▷▸▹= 四组都有字形的箭头。
-- [[https://github.com/jdtsmith/org-modern-indent][org-modern-indent]]：配合 =org-indent-mode= 的源码块"边框括号"
-  （=╭= … =╰= 竖线），普通 =org-modern= 的边栏画法在缩进模式下会失效，
-  这个包补上了；它不在任何 ELPA 归档里，配置用 =:vc= 声明、
-  启动时从 GitHub 自动拉取（首次需要联网，之后直接加载）。
-  打开任何 Org 文件时自动启用。
-- [[https://github.com/awth13/org-appear][org-appear]]：光标进入时临时显示 =*粗体*=、链接、实体等标记。
-- =org-indent-mode=、=visual-line-mode=：正文与代码共用同一套双字体
-  （西文 JetBrains Mono、中文文楷），表格由 valign 做像素级对齐。
-- 换行占满整行宽度再折（按字符折行），中文长句不会提前断行。
-- 正文默认居中显示（Olivetti），宽屏下更像一本排版好的文档。
-- 顶部 =header-line= 显示当前标题路径，=SPC o= 打开右侧大纲。
-- 标题层级、标签、TODO 状态由 org-modern 和 Emacs 默认的 font-lock 配色共同着色。
-- 笔记目录默认为 =~/org=，首次启动会自动创建。
-- 捕获模板会写入：
-  - =~/org/inbox.org= — 任务（=SPC n c= 后按 =t=）
-  - =~/org/notes.org= — 笔记（=SPC n c= 后按 =n=）
-  - =~/org/diary.org= — 日记（=SPC c d=）
-- 导出：=C-c C-e=，支持 =md=、=gfm=、=html= 等后端；还有 Typst 后端
-  （[[https://github.com/jmpunkt/ox-typst][ox-typst]]，需要 Homebrew 的 =typst=）：=C-c C-e y p= 直接出 PDF、
-  =C-c C-e y f= 出 =.typ= 文件、=C-c C-e y o= 导出并打开。PDF 导出
-  全程本地运行，不依赖 LaTeX。
-- 目录：文件里置一个带 =:TOC:= 标签的 =TOC= 标题，保存时自动生成
-  全文目录链接（toc-org）。
-- 嵌入内容：=#+transclude: [[file:xxx.org::标题]]= 把别的文件内容嵌进
-  当前文档且实时同步；=C-c t= 加入、=C-c M-r= 移除（org-transclusion）。
-  =C-c r= 留给下面的 org-remark 前缀，所以移除用 =M-r=。
-- 演示：=SPC T= 把标题当幻灯片翻页（org-tree-slide）。
-- 批注：=C-c r m= 划线并写备注，=C-c r o= 打开备注列表，=C-c r n= / 的
-  =C-c r p= 逐个跳转，=C-c r d= 删除；备注集中写到 =~/org/remark.org=
-  （org-remark，Org 和 Markdown 里都能用）。
-- =#+begin_src python= 等源码块会按对应语言的原生模式着色；
-  =#+begin_example= 只是等宽排版，不做语法高亮。
-- 代码块可执行语言：=emacs-lisp=、=shell=、=python=、=sql=、=sqlite=、
-  =dot=、=plantuml=、=org=。执行不再弹确认（=org-confirm-babel-evaluate= 为
-  nil）。
-- 画图回车即出：=dot= 和 =plantuml= 块写 =:file out.png = 即生成文件；
-  两者由 Homebrew 安装（=brew install graphviz plantuml=）。Python 用
-  =python3=（=org-babel-python-command=）。Python 取值请用
-  =:results output= + =print(...)=，纯值模式在当前版本下不稳定。
-
-* 大纲与当前位置
-
-- 每个文件 buffer 的顶部有一行 =header-line=，显示
-  =文件名 : 当前标题路径=（代码 buffer 显示函数 / 变量路径）。
-  光标移动或编辑后会自动更新；只显示文件名不显示路径，模式行里
-  也不再重复文件名——避免一处文件名出现在三行。打开文件后会自动
-  构建 Imenu 索引，标题路径随即出现。
-- 这行信息用的标题路径来自
-  [[https://github.com/joaotavora/breadcrumb][breadcrumb]] 的公开函数
-  =breadcrumb-imenu-crumbs=（没有改它的私有函数），文件名由配置自己拼；
-  Markdown 和 Org 中即使文件不在 Git 项目里也会启用，因此 =~/org= 下的
-  笔记同样有效。Markdown 树解析器把标题挂在 "Headings" 节点下、名字里
-  还带着 =##=，这两样在显示前都会被去掉。
-- =SPC o= 打开或关闭右侧大纲侧栏
-  （[[https://github.com/bmag/imenu-list][imenu-list]]），
-  侧栏跟随当前 buffer 并自动刷新；=RET= 跳转，=q= 关闭。
-  在 Markdown 中列出所有标题，在 Org 中列出标题树，在代码中列出
-  函数、变量等 Imenu 条目。
-- =SPC i= 仍然可以用补全的方式在整份文档的标题间跳转。
-- Markdown / Org 的模式行末尾还有一个阅读进度条（=▓░= 条和百分比），
-  随光标移动实时更新；这两种模式关闭了行号，进度条就是当前阅读
-  位置的指示。
-
-* Eglot 与语言服务器
-
-Eglot 是 Emacs 内置的 LSP 客户端。打开本地代码文件时，使用 Eglot 自带的
-语言与服务器映射，只在对应程序已安装且能从 =exec-path= 找到时自动连接。
-未安装时提示并跳过；不配置服务器安装器或自动下载，也不通过 LSP 格式化保存内容
-（保存时的格式化由 [[https://github.com/radian-software/apheleia][apheleia]] 跑本地格式化器，见「保存时格式化」）。
-远程文件不自动连接，可按需手动使用 =SPC c l=。
-
-- =SPC c l= 连接，=SPC c R= 重连，=SPC c q= 断开。
-- =g d= 定义、=M-?= 引用（=g r= 故意留空，同原生 =Evil=）、=K= 文档；
-  =SPC c a/r/f= 分别是代码操作、重命名和格式化。
-- 不经 LSP 的文本搜索走 ripgrep：=xref-search-program= 设为 =ripgrep=
-  （Emacs 默认是 =grep=）。受影响的是 =M-?=（=xref-find-references=）
-  在没有语言服务器的 buffer 里的退回路径，以及 =C-x p g=
-  （=project-find-regexp=）和 Dired 的 =A=（=dired-do-find-regexp=）；
-  于是这类搜索尊重 =.gitignore=，不会扫进 =elpa/= 和原生编译产物。
-  Eglot 管理的 buffer 先问语言服务器（=eglot= 自己实现了 references），
-  这个设置不改变那一条路径。
-- 补全沿用 Corfu，错误诊断沿用 Flymake；=[ d= / =] d= 跳到前后诊断。
-- 连接异步进行；关闭最后一个受管理 buffer 后，服务器自动退出。
-- 常见程序：Go 用 =gopls=，Rust 用 =rust-analyzer=，C/C++ 用 =clangd=，
-  Python 使用已安装的 =pylsp=、=basedpyright-langserver=、=pyright-langserver= 等，
-  JavaScript/TypeScript 可用 =typescript-language-server=。服务器需自行安装。
-- =early-init= 不运行 shell。PATH 在 =my/window-ready-hook= 里导入，结果缓存到
-  =var/exec-path.el=：缓存里存了 =exec-path=、=PATH=、每个 shell 启动文件的
-  mtime（=~/.zshenv=、=~/.zprofile=、=~/.zshrc=（尊重 =$ZDOTDIR=）、
-  =~/.profile=、=~/.bash_profile=）以及 =$SHELL= 的值。启动时读缓存
-  （实测 0.2ms，对比首次 200ms），下列任一情况才重新打开 shell：
-  - 缓存不存在，或格式版本变了；
-  - 某个 shell 启动文件的 mtime 与缓存里记录的不同；
-  - =$SHELL= 变了；
-  - 手动 =M-x my/env-refresh=。
-  导入失败只提示、不覆盖已有 =PATH=，也不写缓存。
-  与 Eglot 相关的两件收尾工作不在这里，而在 [[file:lisp/init-eglot.el][init-eglot.el]]：
-  把 =~/go/bin= 加进 =exec-path=（当前 shell 里没有这一项，=gopls= 在那儿），
-  以及为"命令行提前打开、导入 PATH 时已经自动连接失败"的 buffer 重试一次。
-  它挂在同一个 hook 的 depth 30 上，因此一定跑在 PATH 导入之后。
-  其他安装位置放入 shell 的 =PATH=，或配置 =eglot-server-programs=。
-- =M-x eglot-events-buffer= 与 =M-x eglot-stderr-buffer= 可检查服务器通信和错误。
-
-这与 grammar 安装是两件事；本节不修改 grammar 配置。
-
-=early-init.el= 里还设了 =load-path-filter-function=：记住每个文件上次从哪个
-目录加载到，下次优先查那个目录（其余路径保留在后面做兜底，所以记错只会慢、
-不会加载失败）。**实测启动时间没有可测差别**（0.187s vs 0.187s，启动期每个
-文件基本只找一次），它更像长会话里的优化。如果你不想要，删掉 early-init 里
-那三行（=my/load-path-filter= / =my/load-path--remember= / 两个挂载）即可，
-其余不受影响。
-
-* 文件侧栏
-
-- =SPC e=（或 =SPC f e=）打开 / 关闭左侧文件侧栏（[[https://github.com/alexluigit/dirvish][dirvish-side]]）：基于 dirvish（抛光版
-  dired），带 nerd-icons 列表和图片/文本预览。
-- 侧栏自动展开并选中当前 buffer 的文件，切换 buffer 时跟随跳到新
-  项目根（dirvish-side-follow-mode）。
-- 按键沿用 dired + Evil：=j/k= 上下移动，=l= 进入目录，=h= 回上级，=RET=
-  在右侧打开文件，=q= 关闭侧栏。文件操作（复制、移动、改名、删除）
-  与 dired 完全一致，支持批量标记后操作。文件列表不显示行号
-  （行号代表条目行而不是文件）。
-- 普通的 =C-x d= 打开的 dired 也会渲染成 dirvish
-  （dirvish-override-dired-mode）。
-- 两种 fd 用法，都是异步的，大树上也不会卡：
-  - =SPC f F=（=consult-fd=）：边打边过滤，=RET= 直接打开单个文件。
-    参数在 =init-defaults.el= 的 =consult-fd-args=：加了 =--hidden=
-    （否则 =.github/= 、=.zshrc= 搜不到）和 =--exclude .git=；
-    fd 默认尊重 =.gitignore=/=.ignore=，所以没被跟踪的目录不会被扫进来。
-  - =SPC f d=（=my/dirvish-fd=）：输入逗号分隔的模式，把命中文件
-    做成一个真正的 dired/dirvish buffer（递归展开、可标记、可批量改名、可
-    接着用 wgrep 改内容）。它跑的是
-    =fd --exec-batch <GNU ls> <dired switches> --directory=，
-    所以需要 coreutils 提供的 =gls=（macOS 自带 BSD =ls= 不认 =--directory=，
-    =eza= 也不认）。
-
-* 字体与主题
-
-- 字体就两种：西文一律 JetBrains Mono 16pt（=default=、=fixed-pitch=、
-  =variable-pitch= 同款——正文、代码、模式行一致），中文一律霞鹜文楷
-  （正文和代码注释统一楷体，缺字回退苹方），其余只有符号回退字体。
-  Homebrew 安装：=brew install --cask font-jetbrains-mono font-lxgw-wenkai=。
-- 特殊符号（如 =●=、=☑=、框线字符）回退到 Apple Symbols，Nerd Font
-  图标区段（U+E000–F8FF）回退到 Symbols Nerd Font Mono；之前这种
-  符号显示成方框（看起来像乱码）的情况由这两条字体回退兜底。
-- 行号：代码 buffer（编程模式）默认显示绝对行号；Markdown / Org
-  关闭行号，改为在模式行末尾显示阅读进度条；dsh-emacs 的聊天和各视图
-  （会话列表、草稿、计划、任务输出）也关闭行号。
-  想在单个 buffer 切换行号执行 =M-x display-line-numbers-mode=。
-- 主题：Emacs **内置**的 =modus-operandi=（亮色），在
-  [[file:early-init.el][early-init.el]] 里就 =load-theme=——内置主题不走包系统，
-  所以第一帧画出来就是它的配色，没有"先白一下"的阶段。
-  Org 源码块、Markdown 代码块、模式行、grep 高亮全部由主题提供，
-  不再手工指定底色。
-- 内置主题都在 =etc/themes/=，想换只需改 early-init 那一行：
-  =modus-operandi-tinted= / =leuven= / =tango= / =tsdh-light= 是亮色，
-  =modus-vivendi= 系列是暗色。包主题（如 =gruvbox-theme=）也能用，
-  但必须等包系统起来，只能放在 =init-ui.el= 里加载。
-- =etc/themes= 之外想加自己的主题，把它放到 =custom-theme-directory=
-   或加进 =custom-theme-load-path=。
-- 代码块颜色随主题走：Org 的源码块、模式行、grep 高亮等全部由
-  主题提供配色，不再手工指定底色。
-- 模式行：[[https://github.com/seagle0128/doom-modeline][doom-modeline]]，带图标显示 Evil 状态、光标位置、Git 状态、
-  主模式。文件 buffer 的
-  模式行不再显示文件名和路径（顶部 header-line 已有），未保存
-  状态仍用图标提示；Dired、*scratch* 等非文件 buffer 仍显示
-  buffer 名。
-  图标来自 Symbols Nerd Font，用 Homebrew 安装：
-  =brew install --cask font-symbols-only-nerd-font=。字体缺失时
-  图标会退化为方块或字母，安装后重启 Emacs 即可恢复。
-- 窗口：不再加额外的内边距和分隔条，文字直接贴窗口边（想恢复就设
-  =internal-border-width= / =right-divider-width= / =bottom-divider-width=）。
-- 滚动：开启像素平滑滚动，触控板/鼠标可以一直滚到文件最顶或最底。
-- 想换字体，修改 [[file:lisp/init-ui.el][init-ui.el]] 中的 =my/setup-fonts=。
-- Org、传统 Markdown 和 tree-sitter Markdown 的标题统一按层级放大：
-  前四级为正文的 2.0、1.7、1.4、1.1 倍，后两级为正文大小；设置在
-  [[file:lisp/init-ui.el][init-ui.el]] 的标题 face 部分。
+* 键位方案
+
+- 默认 =vim=（Evil 模态）；=M-x my/switch-keybindings= 可切到 =emacs=
+  （原生按键，不加载 Evil）。
+- 具体按键见 [[file:lisp/init-leader.el][init-leader.el]] 和 =init-keys-*.el=。
+
+* 模块与包
+
+** 包管理
+
+- 包：=package.el=、=use-package=、=no-littering=、=package-quickstart=。
+- 修改：ELPA/MELPA 走 TUNA 镜像；运行时文件集中到 =etc/=、=var/=；包缓存在 =elpa/=。
+
+** 补全
+
+- 包：=vertico=、=marginalia=、=orderless=、=consult=、=consult-zoxide=、
+  =embark=、=embark-consult=、=corfu=、=cape=、=tempel=、=tempel-collection=、=which-key=。
+- 修改：minibuffer 竖排补全 + orderless 匹配；Corfu 自动补全；Cape 提供补全源；
+  Tempel 使用现成模板；=consult-zoxide= 跳目录；which-key 中文标签。
+
+** Evil
+
+- 包：=evil=、=evil-collection=、=evil-surround=、=evil-matchit=、=evil-mc=、
+  =nav-flash=、=avy=、=kirigami=。
+- 修改：只在 =vim= 方案启用；=evil-collection= 适配 Dired、help、ibuffer、xref、Magit；
+  dsh-emacs 的聊天/列表/草稿/计划/任务输出使用 =emacs= state；撤销用 Emacs 31 的
+  =undo-redo=；=kirigami= 统一折叠命令，代码折叠后端用 =hs-minor-mode=。
+
+** 文件、会话与编辑
+
+- 包：=dirvish=、=persistent-scratch=、=indent-bars=、=rainbow-delimiters=、
+  =symbol-overlay=、=apheleia=、=separedit=、=emt=（仅 macOS）。
+- 内置：=recentf=、=save-place=、=savehist=、=auto-revert=、=winner=、
+  =delete-selection=、=pixel-scroll=、=repeat=、=show-paren=、=blink-cursor=。
+- 修改：Dirvish 作为文件侧栏并接管 Dired；persistent-scratch 持久化 =*scratch*=；
+  indent-bars 用于代码/YAML；apheleia 保存时调用外部格式化器（rustfmt/gofmt，
+  缺失则跳过）；separedit 编辑注释/docstring；emt 启用 CJK 分词（仅 macOS）。
+
+** 界面与字体
+
+- 包：=doom-modeline=、=nerd-icons=、=diff-hl=、=valign=、=olivetti=。
+- 主题：内置 =modus-operandi=，在 =early-init.el= 加载。
+- 字体：JetBrains Mono 16pt（=default= / =fixed-pitch= / =variable-pitch=）；
+  中文 LXGW WenKai，缺字回退 PingFang SC；符号回退 Apple Symbols 和
+  Symbols Nerd Font Mono。
+- 修改：Markdown / Org / dsh-emacs 阅读 buffer 关闭行号，模式行显示阅读进度；
+  标题按层级放大（2.0 / 1.7 / 1.4 / 1.1 / 1.0 / 1.0）；diff-hl 在侧栏显示 Git 状态。
+
+** Markdown
+
+- 包：内置 =markdown-ts-mode=、=markdown-ts-appear=、=valign=、=olivetti=。
+- 修改：=.md= / =.markdown= / =.mdown= 使用 tree-sitter 模式；标题/引用/代码块/表格/
+  列表的 face 与 Org 对齐；tree-sitter 语法放在 =var/treesit/=，用
+  =build-tree-sitter.sh= 生成；默认开启 appear 渲染、内联图片和脚注显示；
+  正文居中、按整行宽折行。
+
+** Org
+
+- 包：内置 =org=；=org-modern=、=org-modern-indent=（=:vc=）、=org-appear=、
+  =toc-org=、=org-transclusion=、=org-tree-slide=、=org-remark=、=ox-gfm=、=ox-typst=。
+- 修改：=org-startup-indented=、=org-hide-leading-stars=、=org-pretty-entities=；
+  =org-modern= 替换列表/TODO/时间戳/表格样式，折叠星号改为 =▶▷▸▹= 四组；
+  =org-modern-indent= 提供缩进模式下的源码块边框；=org-appear= 光标进入时显示标记；
+  toc-org 自动生成目录；org-transclusion 支持嵌入；org-tree-slide 演示；
+  org-remark 批注写入 =~/org/remark.org=；默认笔记目录 =~/org=；
+  配置 capture 模板和 babel 语言（=emacs-lisp= / =shell= / =python= / =sql= /
+  =sqlite= / =dot= / =plantuml= / =org=）；Typst 导出走 =ox-typst=。
+
+** 大纲、Eglot 与语言服务器
+
+- 包：=breadcrumb=、=imenu-list=、=eglot=（内置）、=flymake=、=exec-path-from-shell=。
+- 修改：header-line 显示文件名和标题/函数路径；imenu-list 提供右侧大纲；
+  Eglot 使用内置语言服务器映射，未安装则提示并跳过；补全走 Corfu，诊断走 Flymake；
+  =xref-search-program= 设为 =ripgrep=；shell PATH 缓存在 =var/exec-path.el=。
+
+** 应用
+
+- 包：=dsh-emacs=（=:vc=）、=magit=（MELPA）、=appine=（=:vc=，仅 macOS）。
+- 修改：三者都延迟加载；dsh-emacs 连接本地 DeepSeek Harness，服务端由
+  =@deepseek-ai/dsh= 提供；Magit 作为 Git 界面；Appine 用 macOS 原生 WebKit/
+  PDFKit 打开网页和 PDF，首次使用下载 =appine-module.dylib=。
 
 * 修改配置
 
-- 每个模块只负责一个方面,新增包时在对应模块里写 =use-package=。
-- 改完配置不用重启：=M-x my/reload-config=。它清掉一次性 hook 的记录、
-  重读 =init.el= 和各模块，然后把启动 hook 重跑一遍（键位方案、补全栈、
-  PATH、保存时格式化都在这些 hook 上，不复位就等于没应用）。注意：
-  - **不会**重跑 =early-init.el=（GC 预算和首帧设置一次就行），
-  - 加载一半的文件会直接报错并**不**重跑 hook，不会把会话弄成半配置状态，
-  - 改了 =init-hooks.el= 本身需要先 =(unload-feature 'init-hooks)=。
-  实时耗时约个位数毫秒（包都已加载，=use-package= 只是重跑 =:config=）。
-- 第三方包统一使用 =:ensure t=;内置包用 =:ensure nil= 或直接 =require=；
-  ELPA 上没有的包用 =:vc=（如 =org-modern-indent=，从 GitHub 拉源码）。
-  不用额外交代包名：[[file:lisp/init-packages.el][init-packages.el]] 在 =M-x package-autoremove=
-  运行前会用"实际已安装的包"填充 =package-selected-packages=，
-  于是那条命令变成安全的空操作，不会误删 =:ensure= 装的东西
-  （代价是它也清不掉弃用的包，真正要清理时手删 =elpa= 目录）。
-- 延迟包怎么设项：=use-package= 的 =:custom= 在**声明时**就赋值（=:defer t=
-  也一样），所以纯粹的 =defcustom= 用 =:custom= 最简单；如果需要在库加载后才
-  生效（或要调包内函数、宏），写进 =:config=——=init-org.el= /
-  =init-defaults.el= 就是这种写法，=tests/startup.el= 会断言启动结束时
-  Org / Markdown 的这些选项仍未被动过。
-- 加载时机:常驻可见的(Evil、vertico、doom-modeline)在启动时
-  加载(主题更早,在 =early-init.el= 里),具体挂在哪一步见上一节；
-  =breadcrumb= 不设 =:defer t= 之外的入口,由 header-line 第一次求值时
-  按 autoload 拉起;重型的 =org=/ox/ob 整条链、
-  =nerd-icons=、=org-modern=、=org-appear=、=valign=
-  都按需加载——打开第一个 Org/正文 buffer 或首次用到对应命令时才
-  读入;脚注的 =treesit=/=xref= 要等第一个 Markdown buffer。
-  =evil-surround= / =evil-matchit= / =evil-mc= 由
-  =my/window-ready-hook= 启动帧就绪后挂的空闲定时器（默认 1 秒）启用
-  （=daemon= 下立即启用，运行时切换键位方案时同样走这个定时器）；
-  =nav-flash= 等首次跳转时才加载；
-  =apheleia= 在 =my/after-init-hook= 最后一步开，=separedit= /
-  =consult-zoxide= / =dsh-emacs= 都只等首次调用。
-  新增 =use-package= 时避免只写 =:custom=
-  却不带 =:defer t=,否则该包会拖整包进入启动。
-- 运行时生成的文件由 =no-littering= 放到 =etc/= 与 =var/=,已在
-  [[file:.gitignore][.gitignore]] 中忽略。备份（=file~=）与自动保存
-  （=#file#=）也由 =no-littering-theme-backups= 重定向到 =var/backup/=
-  和 =var/auto-save/=，不再写在每个被编辑文件旁边；临时目录（=/tmp=、
-  =/dev/shm= 等）里的文件例外，仍就近保存。
+- 每个模块只负责一类设置；新增包写在对应模块的 =use-package= 中。
+- ELPA/MELPA 包用 =:ensure t=；内置包用 =:ensure nil=；不在 ELPA 的用 =:vc=。
+- =elpa/=、=etc/=、=var/= 由 =no-littering= 管理，运行时生成，不进入版本库。
