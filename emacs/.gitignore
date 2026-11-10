@@ -1,5 +1,6 @@
 # Emacs 运行时生成的文件，不进入版本库
 /elpa/
+/modules/
 /eln-cache/
 /etc/
 /var/

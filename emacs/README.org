@@ -565,12 +565,13 @@ Magit 走 MELPA 的 =:ensure t=。=init.el= 最后才 =require= 它。
 - 聊天 buffer 里：=C-c C-c= 发送、=C-u C-c C-c= 插话、=C-c C-b= 中断、
   =C-c C-m= / =C-c C-e= 换模型/推理强度、=C-c C-a= 加附件、=C-c C-o= 载入更早历史、
   =C-c >= 回到草稿、=M-p= / =M-n= 输入历史、=TAB= 补全（=@= 引用文件、=/= 命令）。
-- **Evil 适配**：上游完全不支持 Evil，而它的两个 buffer 都是**只读视图 + 自带
-  单键命令**，normal state 会把它们抢掉一大半（会话列表的 =c= / =d= / =r= /
-  =q= / =RET= …，聊天的 =M-p= / =M-n=）。所以**两个模式都用 Evil 的
-  =emacs= state**：非模态，按键全走原生绑定（聊天里打字直接进 =❯= 输入区，
-  这本来就是 dsh 的设计），=ESC= 仍能回 normal，Vim 键和 =SPC= leader 随时可用。
-  见 =init-app.el= 里 =use-package= 的 =:hook=。
+- **Evil 适配**：上游完全不支持 Evil，而它的 buffer（聊天、会话列表、草稿、
+  计划、任务输出）都是只读视图或纯文本输入区，normal state 会把单键命令和
+  输入抢掉（会话列表的 =c= / =d= / =r= / =q= / =RET=，聊天的 =M-p= / =M-n=，
+  以及首次创建会话时草稿里的打字）。所以这几个模式都用 Evil 的 =emacs=
+  state：非模态，按键全走原生绑定，=ESC= 仍能回 normal，Vim 键和 =SPC=
+  leader 随时可用。见 =init-app.el= 的 =:init=（hook 里按当前键位方案判断，
+  原生方案不因此加载 Evil）。
 - **行号**：聊天、会话列表、草稿、计划和任务输出这些 buffer 都关掉行号
   （=init-app.el= 里按模式挂钩）。它们都是阅读/写作视图，不是代码。
 - 已知坑：=all_proxy= 若是 SOCKS，=dsh= 会警告不支持并直连，需要 http 代理 URL。
@@ -632,6 +633,10 @@ log、blame 都在里面。它从 MELPA 安装（=:ensure t=），同样 =:defer
 - =.md= / =.markdown= / =.mdown= 默认打开的是 Emacs 31 内置的
   =markdown-ts-mode=（tree-sitter 语法解析，位于
   =textmodes/markdown-ts-mode.el=）。不再自动安装或配置传统的 =markdown-mode=。
+- 样式和 Org 对齐：=markdown-ts-heading-N= 继承 =outline-N=（和 =org-level-N=
+  同源），引用块 / 代码块 / 表格 / 列表符号也映射到 Org 的 =org-quote= /
+  =org-block= / =org-table= / =org-modern-symbol=，所以 .md 和 .org 的标题颜色、
+  列表、代码块观感一致（见 =init-ui.el=）。
 - tree-sitter 语法文件统一放在配置目录下的 =var/treesit/=：
   =markdown=、=markdown-inline=、=python=（代码围栏内高亮需要）。
   在新机器上执行本目录的 =./build-tree-sitter.sh= 一键重建
@@ -695,6 +700,9 @@ log、blame 都在里面。它从 MELPA 安装（=:ensure t=），同样 =:defer
 * Org
 
 - [[https://github.com/minad/org-modern][org-modern]]：现代的项目符号、TODO 标签、时间戳和表格样式。
+  - 折叠箭头：默认第三级用 =⯈/⯆=（U+2BC8/U+2BC6），JetBrains Mono
+    和 Apple Symbols 都没有这两个字形，会显示成 LastResort 方块；配置里
+    把 =org-modern-fold-stars= 换成 =▶▷▸▹= 四组都有字形的箭头。
 - [[https://github.com/jdtsmith/org-modern-indent][org-modern-indent]]：配合 =org-indent-mode= 的源码块"边框括号"
   （=╭= … =╰= 竖线），普通 =org-modern= 的边栏画法在缩进模式下会失效，
   这个包补上了；它不在任何 ELPA 归档里，配置用 =:vc= 声明、

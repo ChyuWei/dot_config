@@ -154,7 +154,14 @@
 ;; Modern bullets, TODO keywords and timestamps; loaded by `my/org-setup'.
 (use-package org-modern
   :ensure t
-  :defer t)
+  :defer t
+  :custom
+  ;; The stock third-level fold pair is "⯈/⯆" (U+2BC8/U+2BC6).
+  ;; Neither JetBrains Mono nor Apple Symbols has those glyphs, so they fall
+  ;; back to LastResort boxes in headings.  These pairs are all covered by
+  ;; the configured fonts.
+  (org-modern-fold-stars
+   '(("▶" . "▼") ("▷" . "▽") ("▸" . "▾") ("▹" . "▿"))))
 
 ;; Shows `*bold*', links and entities as source while point is inside them.
 (use-package org-appear

@@ -213,6 +213,15 @@ like one line.  That is what `hs-adjust-block-end-function' -- new in Emacs
   :config
   (setq symbol-overlay-inhibit-map t))
 
+;;; CJK word motion
+
+;; emt: CJK-aware word motion via macOS NLP.  Installed from the fork with
+;; `:vc' (no tags, so `:newest'); the native module lives in modules/
+;; (ignored) and loaded on idle, not during startup.
+(use-package emt
+  :vc (:url "https://github.com/ChyuWei/emt" :rev :newest)
+  :defer t)
+
 ;; Line numbers refer to listing rows in Dired, not file contents.
 (add-hook 'dired-mode-hook
           (lambda () (display-line-numbers-mode -1)))
@@ -468,6 +477,16 @@ Emacs Lisp buffer when asked."
         (assq-delete-all 'emacs-lisp-mode apheleia-mode-alist))
   (apheleia-global-mode 1))
 
+(defun my/init-defaults-activate-cjk ()
+  "Enable `emt-mode' when its native module exists.
+Skip rather than prompt when `emt-lib-path' is missing; fetch it once with
+`M-x emt-download-module'."
+  (require 'emt)
+  (if (file-exists-p emt-lib-path)
+      (emt-mode 1)
+    (message "emt module missing at %s; run M-x emt-download-module"
+             emt-lib-path)))
+
 (add-hook 'my/after-init-hook #'my/init-defaults-activate-display 10)
 (add-hook 'my/after-init-hook #'my/init-defaults-activate-treesit 20)
 (add-hook 'my/after-init-hook #'my/init-defaults-activate-files 30)
@@ -477,6 +496,7 @@ Emacs Lisp buffer when asked."
 (add-hook 'my/after-init-hook #'my/init-defaults-activate-formatting 50)
 
 (add-hook 'my/idle-hook #'my/init-defaults-activate-session)
+(add-hook 'my/idle-hook #'my/init-defaults-activate-cjk)
 
 (provide 'init-defaults)
 

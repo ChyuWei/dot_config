@@ -285,7 +285,11 @@ DEFINITION means this marker labels a footnote definition."
   :config
   (setopt markdown-ts-inline-images t
           markdown-ts-hard-line-break-backslash nil
-          markdown-ts-hard-line-break-space nil))
+          markdown-ts-hard-line-break-space nil
+          ;; Match org-modern's list glyphs (see init-ui.el for the faces).
+          markdown-ts-unordered-list-marker
+          '(("◦ " . "- ") ("– " . "- ") ("• " . "- "))
+          markdown-ts-unchecked-checkbox '("□" . "-")))
 
 (provide 'init-markdown)
 

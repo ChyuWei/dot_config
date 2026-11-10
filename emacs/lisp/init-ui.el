@@ -38,6 +38,46 @@
                do (set-face-attribute (intern (format "%s%d" prefix level))
                                       nil :height height)))))
 
+;; Unify Markdown's typography with Org's.  Org derives `org-level-N' from
+;; `outline-N', so each heading level gets its own colour; both Markdown
+;; modes instead paint every heading with `font-lock-function-name-face' +
+;; bold.  Reusing the Org faces (and org-modern's symbol face for list
+;; markers) makes .md and .org read the same.  The :height set above is
+;; explicit and therefore left untouched by these :inherit settings.
+(with-eval-after-load 'markdown-ts-mode
+  (dotimes (i 6)
+    (set-face-attribute (intern (format "markdown-ts-heading-%d" (1+ i))) nil
+                        :inherit (intern (format "outline-%d" (1+ i)))
+                        :weight 'unspecified))
+  (set-face-attribute 'markdown-ts-block-quote nil
+                      :inherit '(org-quote font-lock-doc-face))
+  (set-face-attribute 'markdown-ts-code-block nil
+                      :inherit '(org-block fixed-pitch))
+  (set-face-attribute 'markdown-ts-code-span nil
+                      :inherit '(org-code shadow))
+  (set-face-attribute 'markdown-ts-table nil
+                      :inherit '(org-table fixed-pitch))
+  (set-face-attribute 'markdown-ts-list-marker nil
+                      :inherit '(org-modern-symbol default))
+  (set-face-attribute 'markdown-ts-task-checked nil
+                      :inherit '(org-modern-symbol font-lock-builtin-face))
+  (set-face-attribute 'markdown-ts-task-unchecked nil
+                      :inherit '(org-modern-symbol font-lock-builtin-face))
+  (set-face-attribute 'markdown-ts-thematic-break nil
+                      :inherit '(org-modern-horizontal-rule markdown-ts-delimiter)))
+
+(with-eval-after-load 'markdown-mode
+  (dotimes (i 6)
+    (set-face-attribute (intern (format "markdown-header-face-%d" (1+ i))) nil
+                        :inherit (intern (format "outline-%d" (1+ i)))
+                        :weight 'unspecified))
+  (set-face-attribute 'markdown-blockquote-face nil
+                      :inherit '(org-quote font-lock-doc-face))
+  (set-face-attribute 'markdown-code-face nil
+                      :inherit '(org-block fixed-pitch))
+  (set-face-attribute 'markdown-inline-code-face nil
+                      :inherit '(org-code shadow)))
+
 ;;; Part 2: definitions ----------------------------------------------------
 
 ;;; Fonts

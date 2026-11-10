@@ -52,6 +52,7 @@
                 (my/window-ready-hook . my/init-completion-activate)
                 (my/window-ready-hook . my/init-evil-activate)
                 (my/idle-hook . my/init-defaults-activate-session)
+                (my/idle-hook . my/init-defaults-activate-cjk)
                 (my/idle-hook . my/init-ui-activate-diff-hl)))
   (unless (memq (cdr pair) (symbol-value (car pair)))
     (error "%S is missing %S" (car pair) (cdr pair))))

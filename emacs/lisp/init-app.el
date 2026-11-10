@@ -17,6 +17,14 @@
 ;; Evil is loaded only when the app is used; this module does not depend on it.
 (declare-function evil-emacs-state "evil")
 
+(defun my/dsh-emacs-evil-state ()
+  "Give a dsh-emacs buffer Evil's non-modal `emacs' state in the vim profile.
+Checked at mode-hook time, so switching profiles at run time also works; the
+native profile must not load Evil merely because a dsh buffer opened."
+  (when (eq my/keybinding-profile 'vim)
+    (require 'evil)
+    (evil-emacs-state 1)))
+
 ;;; DeepSeek Harness client
 
 ;; `dsh web' serves the agent on 127.0.0.1:3080; the CLI is installed outside
@@ -28,13 +36,13 @@
 ;; carries its version in the file header, so `:last-release' would have nothing
 ;; to find.  Nothing is loaded here -- the app's own autoloads are enough.
 ;;
-;; `:hook' is what adapts it to Evil.  dsh-emacs ships no Evil support, and both
-;; of its buffers are read-only views with their own single-key commands, so in
-;; normal state Evil would take `c', `d', `r', `q', `RET' … from the session
-;; list and `M-p'/`M-n' from the chat.  The `emacs' state is Evil's non-modal
-;; one: every key keeps its Emacs binding (typing in the chat lands in the
-;; composer, which routes it there anyway), while ESC still returns to normal,
-;; so Vim's keys and the SPC leader stay reachable.
+;; `:hook' is what adapts it to Evil.  dsh-emacs ships no Evil support, and its
+;; buffers (chat, session list, creation draft, plan and job output) are
+;; read-only views or plain text fields with their own single-key commands, so
+;; in normal state Evil would take `c', `d', `r', `q', `RET' … from the session
+;; list, `M-p'/`M-n' from the chat and typing from the draft.  The `emacs'
+;; state is Evil's non-modal one: every key keeps its Emacs binding, while ESC
+;; still returns to normal, so Vim's keys and the SPC leader stay reachable.
 (use-package dsh-emacs
   :vc (:url "https://github.com/vritser/dsh-emacs" :rev :newest)
   :defer t
@@ -43,11 +51,13 @@
   ;; reading surface: chat, session list, plan, job output and the draft
   ;; composer are prose, not code.  Add the hooks here, not with `:hook':
   ;; a lambda there makes use-package require the package at startup.
+  ;; Evil is attached only when the vim profile is active; the native profile
+  ;; must not load it, which is what a bare `evil-emacs-state' hook would do.
   (dolist (hook '(dsh-emacs-mode-hook dsh-emacs-session-mode-hook
                   dsh-emacs-draft-mode-hook dsh-emacs-plan-mode-hook
                   dsh-emacs-jobs-output-mode-hook))
-    (add-hook hook (lambda () (display-line-numbers-mode -1))))
-  :hook ((dsh-emacs-mode dsh-emacs-session-mode) . evil-emacs-state)
+    (add-hook hook (lambda () (display-line-numbers-mode -1)))
+    (add-hook hook #'my/dsh-emacs-evil-state))
   :custom
   (dsh-emacs-default-preset "ptc")
   (dsh-emacs-server-auto-start t)
