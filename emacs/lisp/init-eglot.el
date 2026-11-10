@@ -31,6 +31,20 @@
   (eglot-sync-connect 0)
   (eglot-extend-to-xref t))
 
+;; Keep diagnostics out of the code: use Flymake's built-in margin
+;; indicators, on the right side, with a light E/W/N symbol per line.
+(use-package flymake
+  :ensure nil
+  :defer t
+  :custom
+  (flymake-indicator-type 'margins)
+  (flymake-margin-indicator-position 'right-margin)
+  (flymake-margin-indicators-string
+   '((error "E" compilation-error)
+     (warning "W" compilation-warning)
+     (note "N" compilation-info)))
+  (flymake-autoresize-margins t))
+
 (defvar-local my/eglot-missing-server nil
   "Non-nil when automatic connection was skipped because no server was found.
 Set per buffer; kept so that the connection can be retried once the shell
@@ -87,14 +101,14 @@ out as a string."
            ;; A named program that is not on PATH: report it once and skip.
            ((and program (not (executable-find program)))
             (setq my/eglot-missing-server t)
-            (message "[Eglot] 未启动：找不到 %s，请手动安装语言服务器" program))
+            (message "[Eglot] Not started: %s not found; install the language server manually" program))
            ;; Either the program exists, or Eglot computes the contact
            ;; itself; let Eglot decide and report its own failures.
            (t
             (condition-case err
                 (eglot-ensure)
               (error
-               (message "[Eglot] 未启动：%s" (error-message-string err)))))))))))
+               (message "[Eglot] Not started: %s" (error-message-string err)))))))))))
 
 (add-hook 'prog-mode-hook #'my/eglot-ensure)
 

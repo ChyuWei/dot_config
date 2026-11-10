@@ -69,6 +69,8 @@
                 ("C-k" . kill-line) ("K" . evil-lookup)
                 ("C-a" . move-beginning-of-line) ("C-u" . universal-argument)
                 ("g d" . evil-goto-definition)
+                ("gD" . xref-find-definitions)
+                ("g r" . xref-find-references)
                 ("C-s" . save-buffer)))
   (unless (eq (my/test-evil-key (car pair)) (cdr pair))
     (error "Vim key %s should be %s, got %S"
@@ -109,9 +111,11 @@
     (unless (string-prefix-p "(defun alpha" line)
       (error "g d should jump to the definition, landed in %S" line))))
 
-;; g r stays unbound (as in stock Evil); references live on Emacs' M-?.
-(unless (null (my/test-evil-key "g r"))
-  (error "g r should be unbound, got %S" (my/test-evil-key "g r")))
+;; xref entry points: gD forces definition lookup, g r finds references.
+(unless (eq (my/test-evil-key "gD") #'xref-find-definitions)
+  (error "gD should be xref-find-definitions, got %S" (my/test-evil-key "gD")))
+(unless (eq (my/test-evil-key "g r") #'xref-find-references)
+  (error "g r should be xref-find-references, got %S" (my/test-evil-key "g r")))
 (unless (eq (my/test-evil-key "M-?") #'xref-find-references)
   (error "M-? should keep xref-find-references, got %S" (my/test-evil-key "M-?")))
 

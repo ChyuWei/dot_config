@@ -25,7 +25,11 @@
     ("[ d" . flymake-goto-prev-error)
     ("] d" . flymake-goto-next-error)
     ("[ q" . previous-error)
-    ("] q" . next-error))
+    ("] q" . next-error)
+    ;; xref entry points: g d is Evil's fallback-aware lookup;
+    ;; g D forces xref, g r lists references.
+    ("gD" . xref-find-definitions)
+    ("g r" . xref-find-references))
   ;; g d keeps Evil's own `evil-goto-definition' (which calls xref, see
   ;; `my/apply-vim-lookup-overrides'); g r is left unbound like stock Evil, and
   ;; references stay on Emacs' own M-? (`xref-find-references').
@@ -85,8 +89,8 @@ asked of ElDoc, which under Eglot contains the LSP hover text."
            (progn (ignore-errors (eldoc-print-current-symbol-info)) t)
            (ignore-errors (eldoc-doc-buffer)))
       nil)
-     (name (message "没有 %s 的文档" name))
-     (t (user-error "光标处没有符号")))))
+     (name (message "No documentation for %s" name))
+     (t (user-error "No symbol at point")))))
 
 (defun my/apply-vim-lookup-overrides (state)
   "Point Evil's K at ElDoc and order g d around xref; undo with STATE off."

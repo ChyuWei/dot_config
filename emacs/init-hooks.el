@@ -124,13 +124,94 @@ skipped."
   (dolist (hook my/init--hook-order)
     (my/init-run-hook-once hook)))
 
+;;; Config drift ----------------------------------------------------------
+
+(require 'filenotify)
+
+(defconst my/config-directory
+  (file-name-as-directory
+   (file-truename (file-name-directory (or load-file-name (buffer-file-name)))))
+  "Root directory of this configuration.")
+
+(defvar my/config--stale-cache nil
+  "Files changed since the running configuration was loaded, or nil.")
+
+(defvar my/config--watches nil
+  "File notification watches for this configuration.")
+
+(defun my/config--source-file-p (file)
+  "Return non-nil when FILE is one of the configuration source files."
+  (and (stringp file)
+       (let ((true (file-truename (expand-file-name file))))
+         (and (string-suffix-p ".el" true)
+              (not (string-prefix-p ".#" (file-name-nondirectory true)))
+              (or (member (file-name-nondirectory true)
+                          '("init.el" "early-init.el" "init-hooks.el"))
+                  (string= (file-name-directory true)
+                           (file-name-as-directory
+                            (file-truename
+                             (expand-file-name "lisp" my/config-directory)))))))))
+
+(defun my/config--file-changed (event)
+  "Record a watched config file change from EVENT."
+  (let ((file (nth 2 event)))
+    (when (my/config--source-file-p file)
+      (let ((true (file-truename (expand-file-name file))))
+        (unless (member true my/config--stale-cache)
+          (push true my/config--stale-cache))
+        (force-mode-line-update t)))))
+
+(defun my/config--watch-file (file)
+  "Add a file notification watch for FILE, if supported."
+  (ignore-errors
+    (file-notify-add-watch file '(change attribute-change)
+                           #'my/config--file-changed)))
+
+(defun my/config-watch-files ()
+  "Watch lisp/ and the main configuration files for changes."
+  (dolist (watch my/config--watches)
+    (ignore-errors (file-notify-rm-watch watch)))
+  (setq my/config--watches nil)
+  (let ((lisp-dir (expand-file-name "lisp" my/config-directory))
+        (root-files '("init.el" "early-init.el" "init-hooks.el")))
+    ;; Watch each source file: kqueue does not recurse.
+    (dolist (file root-files)
+      (let ((full (expand-file-name file my/config-directory)))
+        (when (file-exists-p full)
+          (push (my/config--watch-file full) my/config--watches))))
+    (dolist (file (directory-files lisp-dir t "\\.el\\'"))
+      (when (file-regular-p file)
+        (push (my/config--watch-file file) my/config--watches)))
+    ;; The directory watch notices new and removed files.
+    (when (file-directory-p lisp-dir)
+      (push (my/config--watch-file lisp-dir) my/config--watches))))
+
+(defun my/config-stale-p ()
+  "Return non-nil when a watched configuration file has changed."
+  (and my/config--stale-cache t))
+
+(defun my/config-status ()
+  "Report whether the running configuration matches the files on disk."
+  (interactive)
+  (if my/config--stale-cache
+      (message "Config is stale (not loaded): %s"
+               (mapconcat (lambda (file)
+                            (file-relative-name file my/config-directory))
+                          my/config--stale-cache ", "))
+    (message "Config matches the code on disk")))
+
+;; Watch installation is deferred to idle; startup stays cheap.
+(add-hook 'my/idle-hook #'my/config-watch-files)
+
 ;;; Reloading -------------------------------------------------------------
 
 (defun my/reload-config ()
-  "Re-read init.el and its modules, then re-run the startup hooks.
-Only init.el is loaded: early-init.el sets the GC budget and the initial
-frame for the whole session, so running it a second time would reset the
-grown-up GC thresholds.
+  "Re-read init.el and re-run the startup hooks.
+Only init.el is loaded; modules that are already provided are not
+re-evaluated.  `my/config-status' reports files changed since they were
+loaded, so a stale module is visible instead of silently ignored.
+early-init.el sets the GC budget and the initial frame for the whole
+session, so running it a second time would reset the grown-up GC thresholds.
 
 The one-shot state is cleared first.  Everything the modules *do* (keybinding
 profile, completion stack, PATH import, format-on-save) is attached to the
@@ -147,10 +228,24 @@ half configured."
         (progn
           (load (expand-file-name "init.el" user-emacs-directory) nil t)
           (my/init-run-all)
-          (message "配置已重载（%d ms）"
-                   (round (* 1000 (- (float-time) start)))))
+          ;; init.el itself is now current; other changed modules are not.
+          (setq my/config--stale-cache
+                (delete (file-truename
+                         (expand-file-name "init.el" user-emacs-directory))
+                        my/config--stale-cache))
+          (let ((stale my/config--stale-cache))
+            (message "Config reloaded (%d ms)%s"
+                     (round (* 1000 (- (float-time) start)))
+                     (if stale
+                         (format "; not reloaded: %s"
+                                 (mapconcat
+                                  (lambda (file)
+                                    (file-relative-name
+                                     file my/config-directory))
+                                  stale ", "))
+                       ""))))
       (error
-       (message "重载失败，启动钩子未重跑：%s" (error-message-string err))))))
+       (message "Reload failed; startup hooks not rerun: %s" (error-message-string err))))))
 
 (defcustom my/init-idle-delay 1
   "Seconds of idle time before `my/idle-hook' runs."

@@ -33,10 +33,11 @@
   (let ((library (car entry))
         (prefix (cdr entry)))
     (with-eval-after-load library
-      (cl-loop for height in '(2.0 1.7 1.4 1.1 1.0 1.0)
-               for level from 1
-               do (set-face-attribute (intern (format "%s%d" prefix level))
-                                      nil :height height)))))
+      (let ((level 0))
+        (dolist (height '(2.0 1.7 1.4 1.1 1.0 1.0))
+          (setq level (1+ level))
+          (set-face-attribute (intern (format "%s%d" prefix level))
+                              nil :height height))))))
 
 ;; Unify Markdown's typography with Org's.  Org derives `org-level-N' from
 ;; `outline-N', so each heading level gets its own colour; both Markdown
@@ -192,7 +193,20 @@
                 'face (if (eq my/keybinding-profile 'vim)
                           'doom-modeline-info
                         'doom-modeline-warning)
-                'help-echo "按键方案：M-x my/toggle-keybindings 切换"))
+                'help-echo "Keybindings: M-x my/toggle-keybindings to switch"))
+
+  ;; Cached config drift: no file I/O on redisplay.
+  (doom-modeline-def-segment my/config-status
+    "Show a warning emoji when the running configuration is stale."
+    (when my/config--stale-cache
+      (propertize " 😭 "
+                  'face 'doom-modeline-warning
+                  'help-echo
+                  (concat "Config stale: "
+                          (mapconcat
+                           (lambda (file)
+                             (file-relative-name file my/config-directory))
+                           my/config--stale-cache ", ")))))
 
   ;; Keep stock main segments, replacing only buffer-info.
   (doom-modeline-def-modeline
@@ -200,9 +214,10 @@
    '(eldoc bar window-state workspace-name window-number modals
            my/keybinding-profile matches follow my/buffer-state-or-name
            remote-host buffer-position parrot selection-info)
-   '(compilation objed-state misc-info project-name persp-name battery grip irc
-                 mu4e gnus github debug repl lsp minor-modes input-method
-                 indent-info buffer-encoding major-mode process vcs check time)))
+   '(compilation objed-state misc-info my/config-status project-name persp-name
+                 battery grip irc mu4e gnus github debug repl lsp minor-modes
+                 input-method indent-info buffer-encoding major-mode process vcs
+                 check time)))
 
 ;;; Change indicators
 

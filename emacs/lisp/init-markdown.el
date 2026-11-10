@@ -117,7 +117,7 @@ Only search when invoked.  Save the exact origin on Xref's return stack."
                        (my/markdown-footnote-definition-p position)))
             (setq target position)))))
     (unless target
-      (user-error "找不到脚注 %s 的%s" identifier (if definition "引用" "解释")))
+      (user-error "Footnote %s has no %s" identifier (if definition "reference" "definition")))
     (goto-char origin)
     (xref-push-marker-stack)
     (goto-char target)))
@@ -146,8 +146,8 @@ DEFINITION means this marker labels a footnote definition."
     (remove-text-properties begin end '(invisible nil display nil))
     (make-text-button begin end
                       'follow-link t
-                      'help-echo (format "脚注 %s：点击查看%s；M-, 返回"
-                                         identifier (if definition "引用" "解释"))
+                      'help-echo (format "Footnote %s: click to view %s; M-, to return"
+                                         identifier (if definition "reference" "definition"))
                       'action (lambda (_button)
                                 (my/markdown-footnote-jump identifier definition)))
     (unless visible

@@ -141,6 +141,53 @@ of Eglot even when its server connects after the mode hook has run."
   :ensure t
   :defer t)
 
+;;; Fixed-width columns for which-key -------------------------------------
+
+;; which-key pads each column independently, so columns with a long key or
+;; description start at different x positions.  Use the global maximum for
+;; every column; this keeps key and description columns vertically aligned
+;; without dropping to a single column.
+
+(defvar which-key-add-column-padding)
+(defvar which-key-min-column-description-width)
+
+(defvar my/which-key--fixed-key-width nil)
+(defvar my/which-key--fixed-desc-width nil)
+
+(defun my/which-key--max-width (rows index)
+  "Return the maximum string width of INDEX in ROWS."
+  (let ((width 0))
+    (dolist (row rows width)
+      (let ((value (nth index row)))
+        (when (stringp value)
+          (setq width (max width (string-width value))))))))
+
+(defun my/which-key--list-to-pages-fixed (orig keys avl-lines avl-width)
+  (let ((my/which-key--fixed-key-width (my/which-key--max-width keys 0))
+        (my/which-key--fixed-desc-width (my/which-key--max-width keys 2)))
+    (funcall orig keys avl-lines avl-width)))
+
+(defun my/which-key--pad-column-fixed (orig col-keys avl-width)
+  (if (and my/which-key--fixed-key-width my/which-key--fixed-desc-width)
+      (let* ((key-width (+ which-key-add-column-padding
+                           my/which-key--fixed-key-width))
+             (sep-width (my/which-key--max-width col-keys 1))
+             (desc-width (min (- avl-width key-width sep-width)
+                              (max my/which-key--fixed-desc-width
+                                   which-key-min-column-description-width)))
+             (format (concat "%" (int-to-string key-width) "s%s%s")))
+        (cons (+ key-width sep-width desc-width)
+              (mapcar (lambda (row)
+                        (let ((key (nth 0 row))
+                              (separator (nth 1 row))
+                              (description (nth 2 row)))
+                          (concat (format format key separator description)
+                                  (make-string
+                                   (max (- desc-width (string-width description)) 0)
+                                   ?\s))))
+                      col-keys)))
+    (funcall orig col-keys avl-width)))
+
 ;;; Key discovery
 
 (use-package which-key
@@ -152,12 +199,17 @@ of Eglot even when its server connects after the mode hook has run."
   (which-key-popup-type 'side-window)
   (which-key-side-window-location 'bottom)
   (which-key-side-window-max-height 0.35)
-  (which-key-show-prefix 'top)
+  (which-key-show-prefix 'left)
   (which-key-sort-order 'which-key-prefix-then-key-order)
   (which-key-sort-uppercase-first nil)
-  (which-key-max-description-length 28)
+  (which-key-max-description-length 36)
   (which-key-separator "  ")
-  (which-key-add-column-padding 3))
+  (which-key-add-column-padding 0)
+  :config
+  (advice-add 'which-key--list-to-pages
+              :around #'my/which-key--list-to-pages-fixed)
+  (advice-add 'which-key--pad-column
+              :around #'my/which-key--pad-column-fixed))
 
 ;;; Part 3: activation -----------------------------------------------------
 

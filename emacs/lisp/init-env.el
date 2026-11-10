@@ -213,7 +213,7 @@ next Emacs start is direct again."
     (dolist (name my/proxy-env-vars)
       (setenv name url))
     (setq url-proxy-services services)
-    (message "代理已开启：%s（%s + url-proxy-services）" url
+    (message "Proxy enabled: %s (%s + url-proxy-services)" url
              (mapconcat #'identity my/proxy-env-vars " "))
     url))
 
@@ -231,12 +231,12 @@ proxy that came from the shell."
     (setq url-proxy-services my/proxy--saved-url-proxy)
     (setq my/proxy--saved nil
           my/proxy--saved-url-proxy nil)
-    (message "代理已关闭，环境变量与 url-proxy-services 已还原"))
+    (message "Proxy disabled; environment and url-proxy-services restored"))
    (t
     (dolist (name my/proxy-env-vars)
       (setenv name nil))
     (setq url-proxy-services nil)
-    (message "代理已关闭，%s 与 url-proxy-services 已清空"
+    (message "Proxy disabled; %s and url-proxy-services cleared"
              (mapconcat #'identity my/proxy-env-vars " ")))))
 
 (provide 'init-env)

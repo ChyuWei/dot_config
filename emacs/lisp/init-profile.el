@@ -91,8 +91,8 @@ Idempotent: applying the same profile twice leaves the keymaps unchanged."
   (my/leader-install)
   (my/which-key-refresh)
   (force-mode-line-update t)
-  (message "键位方案：%s%s" profile
-           (if (eq profile 'vim) "（leader: SPC）" "（原生按键，无 leader）")))
+  (message "Keybindings: %s %s" profile
+           (if (eq profile 'vim) "(leader: SPC)" "(native keys, no leader)")))
 
 ;;;###autoload
 (defun my/switch-keybindings (profile)
@@ -103,8 +103,8 @@ Idempotent: applying the same profile twice leaves the keymaps unchanged."
                   nil t nil nil (symbol-name my/keybinding-profile)))))
   (my/apply-keybinding-profile profile)
   (customize-save-variable 'my/keybinding-profile profile)
-  (message "键位方案：%s%s，已保存" profile
-           (if (eq profile 'vim) "（leader: SPC）" "（原生按键，无 leader）")))
+  (message "Keybindings: %s %s, saved" profile
+           (if (eq profile 'vim) "(leader: SPC)" "(native keys, no leader)")))
 
 ;;;###autoload
 (defun my/toggle-keybindings ()
