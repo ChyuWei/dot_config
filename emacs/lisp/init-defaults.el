@@ -445,7 +445,9 @@ paren blinking would behave differently for the first second otherwise."
   (pixel-scroll-precision-mode 1)
   (repeat-mode 1)
   (show-paren-mode 1)
-  (blink-cursor-mode -1))
+  (blink-cursor-mode -1)
+  ;; Very long lines: degrade font-lock and related modes instead of freezing.
+  (global-so-long-mode 1))
 
 (defun my/init-defaults-activate-treesit ()
   "Enable the tree-sitter modes listed in `my/treesit-enabled-ts-modes'.
