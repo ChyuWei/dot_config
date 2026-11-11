@@ -84,16 +84,15 @@
 ;;; Fonts
 
 (defvar my/fonts-configured-p nil
-  "Non-nil once the graphical font stack has been applied.")
+  "Non-nil once the Latin font faces have been applied.")
 
-(defun my/setup-fonts (&rest _)
-  "Apply the shared font stack once a graphical frame is available."
-  (when (and (display-graphic-p) (not my/fonts-configured-p))
-    (setq my/fonts-configured-p t)
-    ;; Prose, code and the modeline share the same Latin typeface.
-    (dolist (face '(default fixed-pitch variable-pitch))
-      (set-face-attribute face nil :family "JetBrains Mono"
-                          :height (if (eq face 'default) 160 1.0)))
+(defvar my/fontsets-configured-p nil
+  "Non-nil once CJK and symbol fontsets have been applied.")
+
+(defun my/setup-fontsets ()
+  "Apply CJK and symbol fontsets once, after the first frame is up."
+  (when (and (display-graphic-p) (not my/fontsets-configured-p))
+    (setq my/fontsets-configured-p t)
     ;; WenKai is the primary Chinese font; PingFang fills missing glyphs.
     (dolist (script '(han cjk-misc))
       (set-fontset-font t script (font-spec :family "LXGW WenKai")))
@@ -105,6 +104,17 @@
       (apply #'set-fontset-font t (car entry)
              (font-spec :family (cadr entry))
              (when (nth 2 entry) (list nil (nth 2 entry)))))))
+
+(defun my/setup-fonts (&rest _)
+  "Apply the Latin face font now and defer the heavier fontsets."
+  (when (and (display-graphic-p) (not my/fonts-configured-p))
+    ;; Prose, code and the modeline share the same Latin typeface.
+    (dolist (face '(default fixed-pitch variable-pitch))
+      (set-face-attribute face nil :family "JetBrains Mono"
+                          :height (if (eq face 'default) 160 1.0)))
+    (setq my/fonts-configured-p t)
+    ;; Fontset creation can be slow on the first frame; keep startup snappy.
+    (run-with-idle-timer 0.3 nil #'my/setup-fontsets)))
 
 ;;; Prose layout
 

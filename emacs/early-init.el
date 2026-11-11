@@ -69,8 +69,12 @@
 (setq frame-inhibit-implied-resize t
       frame-resize-pixelwise t
       inhibit-startup-screen t)
+(add-to-list 'default-frame-alist '(font . "JetBrains Mono-16"))
 (add-to-list 'default-frame-alist '(width . 120))
 (add-to-list 'default-frame-alist '(height . 40))
+;; `initial-frame-alist' is separate from `default-frame-alist'; use the
+;; correct font from the very first frame so there is no small-to-large flash.
+(add-to-list 'initial-frame-alist '(font . "JetBrains Mono-16"))
 
 ;; Keep the menu bar available while learning Emacs.
 (tool-bar-mode -1)

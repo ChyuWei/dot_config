@@ -324,7 +324,7 @@ Detected with Dirvish's public `dirvish-curr' plus the built-in
 ;; installing one (`M-x treesit-install-language-grammar', or
 ;; build-tree-sitter.sh), add its ts-mode to the list below.
 (defconst my/treesit-enabled-ts-modes
-  '(rust-ts-mode python-ts-mode toml-ts-mode)
+  '(rust-ts-mode python-ts-mode toml-ts-mode elixir-ts-mode heex-ts-mode)
   "Tree-sitter modes to enable, i.e. the ones whose grammar is installed.")
 
 ;; Declared for the byte compiler; set for real once treesit is loaded.
@@ -370,6 +370,13 @@ Detected with Dirvish's public `dirvish-curr' plus the built-in
 ;; save it instead of asking for a file name.
 (use-package persistent-scratch
   :ensure t
+  :defer t)
+
+;;; Key usage statistics
+
+;; The fork records both command counts and the actual key sequences.
+(use-package keyfreq
+  :vc (:url "https://github.com/suliveevil/keyfreq" :rev :newest)
   :defer t)
 
 ;;; Part 3: activation -----------------------------------------------------
@@ -449,6 +456,15 @@ paren blinking would behave differently for the first second otherwise."
   ;; Very long lines: degrade font-lock and related modes instead of freezing.
   (global-so-long-mode 1))
 
+(defun my/init-defaults-activate-keyfreq ()
+  "Start keyfreq after startup, keeping its data under var/."
+  (when (require 'keyfreq nil t)
+    (setq keyfreq-file (no-littering-expand-var-file-name "keyfreq")
+          keyfreq-folder (file-name-directory
+                          (or (locate-library "keyfreq") "")))
+    (keyfreq-mode 1)
+    (keyfreq-autosave-mode 1)))
+
 (defun my/init-defaults-activate-treesit ()
   "Enable the tree-sitter modes listed in `my/treesit-enabled-ts-modes'.
 Runs from `my/after-init-hook': it rewrites `major-mode-remap-alist', which
@@ -501,6 +517,7 @@ Skip rather than prompt when `emt-lib-path' is missing; fetch it once with
 
 (add-hook 'my/idle-hook #'my/init-defaults-activate-session)
 (add-hook 'my/idle-hook #'my/init-defaults-activate-cjk)
+(add-hook 'my/idle-hook #'my/init-defaults-activate-keyfreq)
 
 (provide 'init-defaults)
 
